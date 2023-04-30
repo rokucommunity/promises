@@ -1,316 +1,457 @@
-import "pkg:/source/sgnode.bs"
-import "pkg:/source/deviceInfo.bs"
-import "pkg:/source/is.bs"
-import "pkg:/source/utils.bs"
-
 #const PROMISE_DEBUG = false
 
 namespace promises
-	function create() as dynamic
-		id = deviceInfo.getRandomUUID()
-		id = "promise-" + id
-		#if PROMISE_DEBUG
-			' debugging the promise flow
-			if m.__id = invalid then
-				m.__id = 0
-			end if
-			m.__id++
-			id = `promise-${m.__id}`
-		#end if
-		console.trace("[promises.create]", id)
-		return sgnode.createNode("Promise", { id: id })
-	end function
+    function create() as dynamic
+        'create a unique ID for this promise
+        id = "promise-" + promises.internal.createUuid()
+        #if PROMISE_DEBUG
+            ' debugging the promise flow
+            if m.__id = invalid then
+                m.__id = 0
+            end if
+            m.__id++
+            id = `promise-${m.__id}`
+        #end if
 
-	' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
-	function onThen(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
-		return promises.internal.on("then", promise, callback, context)
-	end function
+        'console.trace("[promises.create]", id)
+        node = createObject("roSGNode", "Promise")
+        node.id = id
+        return node
+    end function
 
-	' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
-	function onCatch(promise as dynamic, callback as function, context = {} as object) as dynamic
-		return promises.internal.on("catch", promise, callback, context)
-	end function
+    ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
+    function onThen(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
+        return promises.internal.on("then", promise, callback, context)
+    end function
 
-	' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
-	function onFinally(promise as dynamic, callback as function, context = {} as object) as dynamic
-		return promises.internal.on("finally", promise, callback, context)
-	end function
+    ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
+    function onCatch(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
+        return promises.internal.on("catch", promise, callback, context)
+    end function
 
-	' sub onAll(promiseArray as dynamic, callback as function)
-	' 	if is.nonEmptyArray(promiseArray) then
-	' 		for each promise in promiseArray
-	' 			if promises.isPromise(promise) then
-	' 				' TODO: figure out how to handle promise all like flow
-	' 			end if
-	' 		end for
-	' 	end if
-	' end sub
+    ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
+    function onFinally(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
+        return promises.internal.on("finally", promise, callback, context)
+    end function
 
-	function resolve(result as dynamic, promise = invalid as dynamic) as object
-		if not promises.isPromise(promise) then
-			promise = promises.create()
-		end if
-		if not promises.isComplete(promise) then
-			console.trace("[promises.resolve]", promise.id)
-			promise.update({ promiseResult: result }, true)
-			promise.promiseState = promises.internal.PromiseState.resolved
-		end if
-		return promise
-	end function
+    ' Allows multiple promise operations to be resolved as a single promise.
+    function all(promiseArray as dynamic) as dynamic
+        ' Create a deferred to be resolved later
+        deferred = promises.create()
 
-	function reject(error as dynamic, promise = invalid as dynamic) as object
-		if not promises.isPromise(promise) then
-			promise = promises.create()
-		end if
-		if not promises.isComplete(promise) then
-			console.trace("[promises.reject]", promise.id)
-			promise.update({ promiseResult: error }, true)
-			promise.promiseState = promises.internal.PromiseState.rejected
-		end if
-		return promise
-	end function
+        if type(promiseArray) = "roArray" and not promiseArray.isEmpty() then
+            ' Track the state and results of all the promises
+            state = {
+                deferred: deferred
+                results: []
+                resolvedCount: 0
+                total: promiseArray.count()
+                done: false
+            }
 
-	function isComplete(promise as object) as boolean
-		return promises.isPromise(promise) and (promise.promiseState = promises.internal.PromiseState.resolved or promise.promiseState = promises.internal.PromiseState.rejected)
-	end function
+            for i = 0 to promiseArray.count() - 1
+                promise = promiseArray[i]
+                if promises.isPromise(promise) then
 
-	function isPromise(promise as dynamic) as boolean
-		if is.node(promise) then
-			if promise.isSubType("Promise") then return true
+                    ' Watch for both resolved or rejected promises
+                    promises.onThen(promise, sub(result as dynamic, context as dynamic)
 
-			subType = promise.subType()
+                        ' Do not process any promises that come in late
+                        ' This can happen if any of the other promises reject
+                        if not context.state.done then
+                            ' Always assign the result to the origin index so results are in the same
+                            ' order as the supplied promiseArray
+                            context.state.results[context.index] = result
+                            context.state.resolvedCount++
 
-			if lCase(subType).endsWith("_promise") then return true
-			while true
-				subType = promise.parentSubtype(subType)
-				if lCase(subType).endsWith("_promise") then return true
-				if subType = "" then exit while
-			end while
+                            if context.state.resolvedCount = context.state.total then
+                                ' All the promises are resolved.
+                                ' Resolve the deferred and make the state as complete
+                                context.state.done = true
+                                promises.resolve(context.state.results, context.state.deferred)
+                            end if
+                        end if
+                    end sub, { state: state, index: i })
 
-			return promise.hasField(promises.internal.PromiseField.promiseState)
-		end if
-		return false
-	end function
+                    promises.onCatch(promise, sub(error as dynamic, state as dynamic)
+                        ' This shouldn't happen but if we somehow get a rejected promise after
+                        ' the state is marked as done we should ignore this callback
+                        if not state.done then
+                            ' Immediately mark the state as done and reject the deferred
+                            ' with the error from the rejected promise the first time any
+                            ' promise rejects regardless where in the promise array it was
+                            ' located.
+                            state.done = true
+                            promises.reject(error, state.deferred)
+                        end if
+                    end sub, state)
+                else
+                    ' The value in the promise array is not a promise.
+                    ' Immediately set the result.
+                    state.results[i] = promise
+                    state.resolvedCount++
 
-	' Remove all promise storage from the current m
-	sub clean()
-		for each key in m
-			if key.startsWith("__promises__") then
-				m.delete(key)
-			end if
-		end for
-	end sub
+                    if state.resolvedCount = state.total then
+                        ' All the promises are resolved.
+                        ' Resolve the deferred and make the state as complete
+                        state.done = true
+                        promises.resolve(state.results, state.deferred)
+                    end if
+                end if
+            end for
+        else
+            if type(promiseArray) = "roArray" then
+                ' Resolve when the array is empty
+                promises.resolve(promiseArray, deferred)
+            else
+                ' Reject if the supplied list is not an array
+                promises.reject("Promises.all: did not supply an array")
+            end if
+        end if
 
-	'Allows chaining multiple promise operations in a row in a clean syntax
-	function chain(initialPromise as object, context = "__INVALID__" as object) as object
-		return {
-			_lastPromise: initialPromise
-			_context: context
-			then: function(callback as function) as object
-				m._lastPromise = promises.onThen(m._lastPromise, callback, m._context)
-				return m
-			end function
+        return deferred
+    end function
 
-			"catch": function(callback as function) as object
-				m._lastPromise = promises.onCatch(m._lastPromise, callback, m._context)
-				return m
-			end function
+    function resolve(result as dynamic, promise = invalid as dynamic) as object
+        if not promises.isPromise(promise) then
+            promise = promises.create()
+        end if
+        if not promises.isComplete(promise) then
+            ' console.trace("[promises.resolve]", promise.id)
+            promise.update({ promiseResult: result }, true)
+            promise.promiseState = promises.internal.PromiseState.resolved
+        end if
+        return promise
+    end function
 
-			finally: function(callback as function) as object
-				m._lastPromise = promises.onFinally(m._lastPromise, callback, m._context)
-				return m
-			end function
+    function reject(error as dynamic, promise = invalid as dynamic) as object
+        if not promises.isPromise(promise) then
+            promise = promises.create()
+        end if
+        if not promises.isComplete(promise) then
+            ' console.trace("[promises.reject]", promise.id)
+            promise.update({ promiseResult: error }, true)
+            promise.promiseState = promises.internal.PromiseState.rejected
+        end if
+        return promise
+    end function
 
-			toPromise: function() as object
-				return m._lastPromise
-			end function
-		}
-	end function
+    function isComplete(promise as object) as boolean
+        return promises.isPromise(promise) and (promise.promiseState = promises.internal.PromiseState.resolved or promise.promiseState = promises.internal.PromiseState.rejected)
+    end function
 
-	' Makes sure the value supplied is a promise
-	function ensurePromise(value as object) as object
-		return promises.isPromise(value) ? value : promises.resolve(value)
-	end function
+    ' Determines if the given item is a promise.
+    '
+    ' Will return true if at least one of the following conditions are true:
+    ' - the SubType exactly equals "Promise"
+    ' - the subtype ends with "_promise" case insensitive
+    ' - the node has a field called "promiseState"
+    function isPromise(promise as dynamic) as boolean
+        if not type(promise) = "roSGNode" then
+            return false
+        end if
+
+        subType = lcase(promise.subType())
+
+        if subType = "promise" then
+            return true
+        end if
+
+        if subType.endsWith("_promise") then
+            return true
+        end if
+        while true
+            subType = promise.parentSubtype(subType)
+            if lCase(subType).endsWith("_promise") then return true
+            if subType = "" then exit while
+        end while
+
+        return promise.hasField(promises.internal.PromiseField.promiseState)
+    end function
+
+    ' Remove all promise storage from the current m
+    sub clean()
+        for each key in m
+            if key.startsWith("__promises__") then
+                m.delete(key)
+            end if
+        end for
+    end sub
+
+    'Allows chaining multiple promise operations in a row in a clean syntax
+    function chain(initialPromise as object, context = "__INVALID__" as object) as object
+        return {
+            _lastPromise: initialPromise
+            _context: context
+            then: function(callback as function) as object
+                m._lastPromise = promises.onThen(m._lastPromise, callback, m._context)
+                return m
+            end function
+
+            "catch": function(callback as function) as object
+                m._lastPromise = promises.onCatch(m._lastPromise, callback, m._context)
+                return m
+            end function
+
+            finally: function(callback as function) as object
+                m._lastPromise = promises.onFinally(m._lastPromise, callback, m._context)
+                return m
+            end function
+
+            toPromise: function() as object
+                return m._lastPromise
+            end function
+        }
+    end function
+
+    ' Makes sure the value supplied is a promise
+    function ensurePromise(value as object) as object
+        return promises.isPromise(value) ? value : promises.resolve(value)
+    end function
 end namespace
 
 namespace promises.internal
-	enum PromiseState
-		pending = "pending"
-		resolved = "resolved"
-		rejected = "rejected"
-	end enum
+    enum PromiseState
+        pending = "pending"
+        resolved = "resolved"
+        rejected = "rejected"
+    end enum
 
-	enum PromiseField
-		promiseState = "promiseState"
-		promiseResult = "promiseResult"
-	end enum
+    enum PromiseField
+        promiseState = "promiseState"
+        promiseResult = "promiseResult"
+    end enum
 
-	' Clear storage for a given promise
-	sub clearPromiseStorage(promise as object)
-		m.delete("__promises__" + promise.id)
-	end sub
+    ' Clear storage for a given promise
+    sub clearPromiseStorage(promise as object)
+        m.delete("__promises__" + promise.id)
+    end sub
 
-	' Get the storage for a promise on `m`
-	function getPromiseStorage(promise as object) as object
-		id = "__promises__" + promise.id
+    ' Get the storage for a promise on `m`
+    function getPromiseStorage(promise as object) as object
+        id = "__promises__" + promise.id
 
-		storage = m[id]
-		if storage = invalid then
-			sgnode.observe(promise, promises.internal.PromiseField.promiseState, promises.internal.notifyListeners)
-			storage = {
-				promise: promise
-				thenListeners: []
-				catchListeners: []
-				finallyListeners: []
-			}
-			m[id] = storage
-		end if
-		return storage
-	end function
+        storage = m[id]
+        if storage = invalid then
+            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, promises.internal.notifyListeners)
+            storage = {
+                promise: promise
+                thenListeners: []
+                catchListeners: []
+                finallyListeners: []
+            }
+            m[id] = storage
+        end if
+        return storage
+    end function
 
-	'
-	' Registers a listener for a promise for the then, catch, or finally events
-	' @param eventName - should be "then", "catch", or "finally"
-	'
-	function on(eventName as string, promise as dynamic, callback as function, context = {} as object) as dynamic
-		if promises.isPromise(promise) then
-			newPromise = promises.create()
-			storage = promises.internal.getPromiseStorage(promise)
-			storage[eventName + "Listeners"].push({
-				callback: callback
-				context: context
-				promise: newPromise
-			})
+    '
+    ' Registers a listener for a promise for the then, catch, or finally events
+    ' @param eventName - should be "then", "catch", or "finally"
+    '
+    function on(eventName as string, promise as dynamic, callback as function, context = {} as object) as dynamic
+        if promises.isPromise(promise) then
+            newPromise = promises.create()
+            storage = promises.internal.getPromiseStorage(promise)
+            storage[eventName + "Listeners"].push({
+                callback: callback
+                context: context
+                promise: newPromise
+            })
 
-			promiseState = promise.promiseState
-			'trigger a change if the promise is already resolved
-			if promiseState = promises.internal.PromiseState.resolved or promiseState = promises.internal.PromiseState.rejected then
-				utils.delay(sub (details as object)
-					details.promise.promiseState = details.promiseState
-				end sub, { promise: promise, promiseState: promiseState })
-			end if
-			console.trace("[promises.watch]", newPromise.id, "is watching", promise.id, eventName)
-			return newPromise
-		end if
+            promiseState = promise.promiseState
+            'trigger a change if the promise is already resolved
+            if promiseState = promises.internal.PromiseState.resolved or promiseState = promises.internal.PromiseState.rejected then
+                promises.internal.delay(sub (details as object)
+                    details.promise.promiseState = details.promiseState
+                end sub, { promise: promise, promiseState: promiseState })
+            end if
+            'console.trace("[promises.watch]", newPromise.id, "is watching", promise.id, eventName)
+            return newPromise
+        end if
 
-		errorMessage = "Cannot register promises." + eventName + " for non-promise"
-		console.error(errorMessage)
-		throw errorMessage
-		return invalid
-	end function
+        errorMessage = "Cannot register promises." + eventName + " for non-promise"
+        'console.error(errorMessage)
+        throw errorMessage
+        return invalid
+    end function
 
-	'
-	' Notify all the listeners of a promise that it has been completed
-	'
-	sub notifyListeners(event as object)
-		originalPromise = event.getRoSgNode()
-		if promises.isComplete(originalPromise) then
-			console.trace("[promises.done]", originalPromise.id, "has completed")
-			promiseStorage = promises.internal.getPromiseStorage(originalPromise)
+    '
+    ' Notify all the listeners of a promise that it has been completed
+    '
+    sub notifyListeners(event as object)
+        originalPromise = event.getRoSgNode()
+        if promises.isComplete(originalPromise) then
+            'console.trace("[promises.done]", originalPromise.id, "has completed")
+            promiseStorage = promises.internal.getPromiseStorage(originalPromise)
 
-			promiseState = originalPromise.promiseState
-			promiseResult = originalPromise.promiseResult
+            promiseState = originalPromise.promiseState
+            promiseResult = originalPromise.promiseResult
 
-			'handle .then() listeners
-			for each listener in promiseStorage.thenListeners
-				promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.internal.PromiseState.resolved, promiseResult)
-			end for
+            'handle .then() listeners
+            for each listener in promiseStorage.thenListeners
+                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.internal.PromiseState.resolved, promiseResult)
+            end for
 
-			'handle .catch() listeners
-			for each listener in promiseStorage.catchListeners
-				promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.internal.PromiseState.rejected, promiseResult)
-			end for
+            'handle .catch() listeners
+            for each listener in promiseStorage.catchListeners
+                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.internal.PromiseState.rejected, promiseResult)
+            end for
 
-			'handle .finally() listeners
-			for each listener in promiseStorage.finallyListeners
-				promises.internal.processPromiseListener(originalPromise, listener, true)
-			end for
-			#if PROMISE_DEBUG
-				if m.__storage = invalid then
-					m.__storage = []
-				end if
-				'TODO giant memory leak. if you see this, delete it immediately!
-				m.__storage.push(promiseStorage)
-			#end if
-			'delete the storage for this promise since we've handled all of the listeners
-			promises.internal.clearPromiseStorage(originalPromise)
-		end if
-	end sub
+            'handle .finally() listeners
+            for each listener in promiseStorage.finallyListeners
+                promises.internal.processPromiseListener(originalPromise, listener, true)
+            end for
+            #if PROMISE_DEBUG
+                if m.__storage = invalid then
+                    m.__storage = []
+                end if
+                'TODO giant memory leak. if you see this, delete it immediately!
+                m.__storage.push(promiseStorage)
+            #end if
+            'delete the storage for this promise since we've handled all of the listeners
+            promises.internal.clearPromiseStorage(originalPromise)
+        end if
+    end sub
 
-	' We use an internal value to represent unset. Check if the parameter is that value
-	function isSet(value as dynamic) as boolean
-		return not (is.nonEmptyString(value) and value = "__INVALID__")
-	end function
+    ' We use an internal value to represent unset. Check if the parameter is that value
+    function isSet(value as dynamic) as boolean
+        return not (promises.internal.isNonEmptyString(value) and value = "__INVALID__")
+    end function
 
-	' Handle an individual promise listener
-	sub processPromiseListener(originalPromise as object, storageItem as object, callCallback as boolean, promiseValue = "__INVALID__" as dynamic)
-		newPromise = storageItem.promise
-		console.trace("[promises.notify]", originalPromise.id, "notifying", newPromise.id)
-		callback = storageItem.callback
-		context = storageItem.context
-		hasContext = promises.internal.isSet(context)
-		hasPromiseValue = promises.internal.isSet(promiseValue)
-		'only call the callback if configured to do so
-		if callCallback then
-			console.trace("[promises.notify]", originalPromise.id, "calling callback for", newPromise.id)
-			try
-				'.then and .catch take one or two parameters (`promiseValue` and optional `context`)
-				if hasPromiseValue then
-					if hasContext then
-						callbackResult = callback(promiseValue, context)
-					else
-						callbackResult = callback(promiseValue)
-					end if
+    ' Is the supplied value a valid String type and is not empty
+    ' @param value - The variable to be checked
+    ' @return true if value is a non-empty string, false otherwise
+    function isNonEmptyString(value as dynamic) as boolean
+        return (type(value) = "String" or type(value) = "roString") and value <> ""
+    end function
 
-					'.finally callback takes 1 optional parameter (`context`)
-				else
-					if hasContext then
-						callbackResult = callback(context)
-					else
-						callbackResult = callback()
-					end if
-				end if
-			catch e
-				console.trace("[promises.notify]", originalPromise.id, "callback for", newPromise.id, "threw exception", e)
-				'the result is a rejected promise
-				callbackResult = promises.reject(e)
-			end try
-		else
-			'use the current promise value to pass to the next promise (this is a .catch handler)
-			if originalPromise.promiseState = promises.internal.PromiseState.rejected then
-				callbackResult = promises.reject(promiseValue)
-			else
-				callbackResult = promiseValue
-			end if
-		end if
+    ' Handle an individual promise listener
+    sub processPromiseListener(originalPromise as object, storageItem as object, callCallback as boolean, promiseValue = "__INVALID__" as dynamic)
+        newPromise = storageItem.promise
+        'console.trace("[promises.notify]", originalPromise.id, "notifying", newPromise.id)
+        callback = storageItem.callback
+        context = storageItem.context
+        hasContext = promises.internal.isSet(context)
+        hasPromiseValue = promises.internal.isSet(promiseValue)
+        'only call the callback if configured to do so
+        if callCallback then
+            'console.trace("[promises.notify]", originalPromise.id, "calling callback for", newPromise.id)
+            try
+                '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
+                if hasPromiseValue then
+                    if hasContext then
+                        callbackResult = callback(promiseValue, context)
+                    else
+                        callbackResult = callback(promiseValue)
+                    end if
 
-		'if the .then() callback returned a promise. wait for it to resolve and THEN resolve the newPromise
-		if promises.isPromise(callbackResult) then
-			callbackPromise = callbackResult
-			'wait for the callback promise to complete
-			promises.onFinally(callbackPromise, sub (context as object)
-				promiseState = context.callbackPromise.promiseState
-				promiseResult = context.callbackPromise.promiseResult
+                    '.finally callback takes 1 optional parameter (`context`)
+                else
+                    if hasContext then
+                        callbackResult = callback(context)
+                    else
+                        callbackResult = callback()
+                    end if
+                end if
+            catch e
+                'console.trace("[promises.notify]", originalPromise.id, "callback for", newPromise.id, "threw exception", e)
+                'the result is a rejected promise
+                callbackResult = promises.reject(e)
+            end try
+        else
+            'use the current promise value to pass to the next promise (this is a .catch handler)
+            if originalPromise.promiseState = promises.internal.PromiseState.rejected then
+                callbackResult = promises.reject(promiseValue)
+            else
+                callbackResult = promiseValue
+            end if
+        end if
 
-				if promiseState = promises.internal.PromiseState.resolved then
-					'the callback promise is complete. resolve the newPromise
-					promises.resolve(promiseResult, context.newPromise)
-					return
-				end if
+        'if the .then() callback returned a promise. wait for it to resolve and THEN resolve the newPromise
+        if promises.isPromise(callbackResult) then
+            callbackPromise = callbackResult
+            'wait for the callback promise to complete
+            promises.onFinally(callbackPromise, sub (context as object)
+                promiseState = context.callbackPromise.promiseState
+                promiseResult = context.callbackPromise.promiseResult
 
-				if promiseState = promises.internal.PromiseState.rejected then
-					promises.reject(promiseResult, context.newPromise)
-					return
-				end if
-			end sub, {
-				newPromise: newPromise
-				callbackPromise: callbackPromise
-			})
+                if promiseState = promises.internal.PromiseState.resolved then
+                    'the callback promise is complete. resolve the newPromise
+                    promises.resolve(promiseResult, context.newPromise)
+                    return
+                end if
 
-			'the .then() callback returned a non-promise. Resolve the newPromise immediately with this value
-		else
-			promises.resolve(callbackResult, newPromise)
-		end if
-	end sub
+                if promiseState = promises.internal.PromiseState.rejected then
+                    promises.reject(promiseResult, context.newPromise)
+                    return
+                end if
+            end sub, {
+                newPromise: newPromise
+                callbackPromise: callbackPromise
+            })
 
+            'the .then() callback returned a non-promise. Resolve the newPromise immediately with this value
+        else
+            promises.resolve(callbackResult, newPromise)
+        end if
+    end sub
+
+    '
+    ' Generates a new UUID
+    '
+    function createUuid() as string
+        if m.__deviceInfo = invalid then
+            m.__deviceInfo = createObject("roDeviceInfo")
+        end if
+        return m.__deviceInfo.getRandomUUID()
+    end function
+
+    ' Makes a delayed call to the supplied function. Default behavior is essentially next tick.
+    ' @param {Function} callback - The function to be called after a set delay
+    ' @param {Dynamic} context - a single item of data to be passed into the callback when invoked
+    ' @param {Float} [duration] - the amount of delay before invoking the callback
+    sub delay(callback as function, context as dynamic, duration = 0.0001 as float)
+        timer = createObject("roSGNode", "Timer")
+        timer.update({ duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid() }, true)
+
+        m[timer.id] = {
+            timer: timer
+            callback: callback
+            context: context
+        }
+
+        promises.internal.observeFieldScoped(timer, "fire", sub (event as object)
+            delayId = event.getNode()
+            options = m[delayId]
+            callback = options.callback
+            try
+                callback(options.context)
+            catch e
+                'console.error("Crash during utils.delay:", e)
+            end try
+            m[delayId] = invalid
+        end sub)
+
+        timer.control = "start"
+    end sub
+
+    ' Observes a node field using observeFieldScoped
+    ' @param {roSGNode} node - The node to apply the observer
+    ' @param {String} field - The name of the field to be monitored.
+    ' @param {Dynamic} callback - The name or message port to be executed when the value of the field changes.
+    ' @return true if field coudl be observed, false if not
+    function observeFieldScoped(node as object, field as string, callback as dynamic, infoFields = [] as object)
+        if not type(node) = "roSGNode" then
+            return false
+        else
+            if type(callback) = "roFunction" or type(callback) = "Function" then
+                callback = callback.toStr().tokenize(" ").peek()
+            end if
+            if not node.observeFieldScoped(field, callback, infoFields) then
+                return false
+            end if
+        end if
+        return true
+    end function
 end namespace
