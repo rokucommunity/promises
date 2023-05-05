@@ -1,19 +1,21 @@
-#const PROMISE_DEBUG = false
+#const PROMISES_DEBUG = false
 
 namespace promises
     function create() as dynamic
         'create a unique ID for this promise
         id = "promise-" + promises.internal.createUuid()
-        #if PROMISE_DEBUG
+        #if PROMISES_DEBUG
             ' debugging the promise flow
-            if m.__id = invalid then
-                m.__id = 0
+            if m.__promises__idSequence = invalid then
+                m.__promises__idSequence = 0
             end if
-            m.__id++
-            id = `promise-${m.__id}`
+            m.__promises__idSequence++
+            id = `promise-${m.__promises__idSequence}`
         #end if
 
-        'console.trace("[promises.create]", id)
+        #if PROMISES_DEBUG
+            print "[promises.create]", id
+        #end if
         node = createObject("roSGNode", "Promise")
         node.id = id
         return node
@@ -266,12 +268,16 @@ namespace promises.internal
                     details.promise.promiseState = details.promiseState
                 end sub, { promise: promise, promiseState: promiseState })
             end if
-            'console.trace("[promises.watch]", newPromise.id, "is watching", promise.id, eventName)
+            #if PROMISES_DEBUG
+                print "[promises.watch]", newPromise.id, "is watching", promise.id, eventName
+            #end if
             return newPromise
         end if
 
         errorMessage = "Cannot register promises." + eventName + " for non-promise"
-        'console.error(errorMessage)
+        #if PROMISES_DEBUG
+            print errorMessage
+        #end if
         throw errorMessage
         return invalid
     end function
@@ -282,7 +288,9 @@ namespace promises.internal
     sub notifyListeners(event as object)
         originalPromise = event.getRoSgNode()
         if promises.isComplete(originalPromise) then
-            'console.trace("[promises.done]", originalPromise.id, "has completed")
+            #if PROMISES_DEBUG
+                print "[promises.done]", originalPromise.id, "has completed"
+            #end if
             promiseStorage = promises.internal.getPromiseStorage(originalPromise)
 
             promiseState = originalPromise.promiseState
@@ -302,12 +310,12 @@ namespace promises.internal
             for each listener in promiseStorage.finallyListeners
                 promises.internal.processPromiseListener(originalPromise, listener, true)
             end for
-            #if PROMISE_DEBUG
-                if m.__storage = invalid then
-                    m.__storage = []
+            #if PROMISES_DEBUG
+                if m.__promises__debug = invalid then
+                    m.__promises__debug = []
                 end if
                 'TODO giant memory leak. if you see this, delete it immediately!
-                m.__storage.push(promiseStorage)
+                m.__promises__debug.push(promiseStorage)
             #end if
             'delete the storage for this promise since we've handled all of the listeners
             promises.internal.clearPromiseStorage(originalPromise)
@@ -329,14 +337,18 @@ namespace promises.internal
     ' Handle an individual promise listener
     sub processPromiseListener(originalPromise as object, storageItem as object, callCallback as boolean, promiseValue = "__INVALID__" as dynamic)
         newPromise = storageItem.promise
-        'console.trace("[promises.notify]", originalPromise.id, "notifying", newPromise.id)
+        #if PROMISES_DEBUG
+            print "[promises.notify]", originalPromise.id, "notifying", newPromise.id
+        #end if
         callback = storageItem.callback
         context = storageItem.context
         hasContext = promises.internal.isSet(context)
         hasPromiseValue = promises.internal.isSet(promiseValue)
         'only call the callback if configured to do so
         if callCallback then
-            'console.trace("[promises.notify]", originalPromise.id, "calling callback for", newPromise.id)
+            #if PROMISES_DEBUG
+                print "[promises.notify]", originalPromise.id, "calling callback for", newPromise.id
+            #end if
             try
                 '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
                 if hasPromiseValue then
@@ -355,7 +367,9 @@ namespace promises.internal
                     end if
                 end if
             catch e
-                'console.trace("[promises.notify]", originalPromise.id, "callback for", newPromise.id, "threw exception", e)
+                #if PROMISES_DEBUG
+                    print "[promises.notify]", originalPromise.id, "callback for", newPromise.id, "threw exception", e
+                #end if
                 'the result is a rejected promise
                 callbackResult = promises.reject(e)
             end try
@@ -401,10 +415,10 @@ namespace promises.internal
     ' Generates a new UUID
     '
     function createUuid() as string
-        if m.__deviceInfo = invalid then
-            m.__deviceInfo = createObject("roDeviceInfo")
+        if m.__promises__deviceInfo = invalid then
+            m.__promises__deviceInfo = createObject("roDeviceInfo")
         end if
-        return m.__deviceInfo.getRandomUUID()
+        return m.__promises__deviceInfo.getRandomUUID()
     end function
 
     ' Makes a delayed call to the supplied function. Default behavior is essentially next tick.
@@ -428,7 +442,9 @@ namespace promises.internal
             try
                 callback(options.context)
             catch e
-                'console.error("Crash during utils.delay:", e)
+                #if PROMISES_DEBUG
+                    print "Crash during utils.delay:", e
+                #end if
             end try
             m[delayId] = invalid
         end sub)
