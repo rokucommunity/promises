@@ -1,3 +1,4 @@
 {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "stagingDir": "./dist"
 }

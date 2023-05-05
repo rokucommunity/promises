@@ -5,11 +5,11 @@
   "license": "MIT",
   "description": "A Promise-like implementation for BrightScript/Roku",
   "scripts": {
-    "preversion": "npm run validate",
-    "validate": "bsc --create-package=false --copy-to-staging=false"
+    "preversion": "npm run build",
+    "build": "bsc --create-package=false"
   },
   "devDependencies": {
-    "brighterscript": "^0.62.0"
+    "brighterscript": "^0.64.3"
   },
   "files": [
     "source/**/*"
