@@ -6,11 +6,11 @@ namespace promises
         id = "promise-" + promises.internal.createUuid()
         #if PROMISES_DEBUG
             ' debugging the promise flow
-            if m.__id = invalid then
-                m.__id = 0
+            if m.__promises__idSequence = invalid then
+                m.__promises__idSequence = 0
             end if
-            m.__id++
-            id = `promise-${m.__id}`
+            m.__promises__idSequence++
+            id = `promise-${m.__promises__idSequence}`
         #end if
 
         #if PROMISES_DEBUG
@@ -311,11 +311,11 @@ namespace promises.internal
                 promises.internal.processPromiseListener(originalPromise, listener, true)
             end for
             #if PROMISES_DEBUG
-                if m.__storage = invalid then
-                    m.__storage = []
+                if m.__promises__debug = invalid then
+                    m.__promises__debug = []
                 end if
                 'TODO giant memory leak. if you see this, delete it immediately!
-                m.__storage.push(promiseStorage)
+                m.__promises__debug.push(promiseStorage)
             #end if
             'delete the storage for this promise since we've handled all of the listeners
             promises.internal.clearPromiseStorage(originalPromise)
@@ -415,10 +415,10 @@ namespace promises.internal
     ' Generates a new UUID
     '
     function createUuid() as string
-        if m.__deviceInfo = invalid then
-            m.__deviceInfo = createObject("roDeviceInfo")
+        if m.__promises__deviceInfo = invalid then
+            m.__promises__deviceInfo = createObject("roDeviceInfo")
         end if
-        return m.__deviceInfo.getRandomUUID()
+        return m.__promises__deviceInfo.getRandomUUID()
     end function
 
     ' Makes a delayed call to the supplied function. Default behavior is essentially next tick.
