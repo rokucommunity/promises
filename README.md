@@ -106,10 +106,10 @@ function logIn()
     }
     ' assume this function returns a promise
     promise = getAuthTokenFromServer()
-    promises.onThen(function(response, context)
+    promises.onThen(promise, function(response, context)
         context.authToken = response.authToken
         print context.username, context.authToken
-    end function)
+    end function, context)
 end function
 ```
 
