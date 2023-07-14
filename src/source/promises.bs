@@ -153,7 +153,7 @@ namespace promises
             return false
         end if
 
-        subType = lcase(promise.subType())
+        subType = lCase(promise.subType())
 
         if subType = "promise" then
             return true
@@ -235,6 +235,8 @@ namespace promises.internal
 
         storage = m[id]
         if storage = invalid then
+            ' unregister any observers on the promise to prevent multiple callbacks
+            promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
             promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, promises.internal.notifyListeners)
             storage = {
                 promise: promise
@@ -291,6 +293,9 @@ namespace promises.internal
             #if PROMISES_DEBUG
                 print "[promises.done]", originalPromise.id, "has completed"
             #end if
+
+            ' unregister any observers once the promise is completed
+            promises.internal.unobserveFieldScoped(originalPromise, promises.internal.PromiseField.promiseState)
             promiseStorage = promises.internal.getPromiseStorage(originalPromise)
 
             promiseState = originalPromise.promiseState
@@ -436,6 +441,7 @@ namespace promises.internal
         }
 
         promises.internal.observeFieldScoped(timer, "fire", sub (event as object)
+            promises.internal.unobserveFieldScoped(event.getRosgNode(), "fire")
             delayId = event.getNode()
             options = m[delayId]
             callback = options.callback
@@ -456,7 +462,7 @@ namespace promises.internal
     ' @param {roSGNode} node - The node to apply the observer
     ' @param {String} field - The name of the field to be monitored.
     ' @param {Dynamic} callback - The name or message port to be executed when the value of the field changes.
-    ' @return true if field coudl be observed, false if not
+    ' @return true if field could be observed, false if not
     function observeFieldScoped(node as object, field as string, callback as dynamic, infoFields = [] as object)
         if not type(node) = "roSGNode" then
             return false
@@ -465,6 +471,21 @@ namespace promises.internal
                 callback = callback.toStr().tokenize(" ").peek()
             end if
             if not node.observeFieldScoped(field, callback, infoFields) then
+                return false
+            end if
+        end if
+        return true
+    end function
+
+    ' Unobserve a node field using unobserveFieldScoped
+    ' @param {roSGNode} node - The node to remove the observer from
+    ' @param {String} field - The name of the field to no longer be monitored.
+    ' @return true if field could be unobserved, false if not
+    function unobserveFieldScoped(node as object, field as string)
+        if not type(node) = "roSGNode" then
+            return false
+        else
+            if not node.unobserveFieldScoped(field) then
                 return false
             end if
         end if
