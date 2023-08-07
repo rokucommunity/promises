@@ -1,0 +1,27 @@
+import "pkg:/components/Demo.bs"
+import "pkg:/components/InitResult.bs"
+import "pkg:/source/promises.bs"
+
+sub completion(result as InitResult)
+    if result = invalid or result.success = false
+       print(`[DEMO] Promise failure ${result.getMessage()}`)
+    else
+       print(`[DEMO] Promise success ${result.getMessage()}`)
+    end if
+ end sub
+
+sub init()
+    m.top.setFocus(true)
+    m.mainLabel = m.top.findNode("mainLabel")
+    'change the color
+    m.mainLabel.color = "0xFFFFFF"
+    'make the text really big
+    m.mainLabel.font.size = 100
+    m.demo = new Demo()
+    m.demo.simpleExample(completion)
+    sleep(1000)
+    m.demo.chainExample(completion)
+    sleep(1000)
+    m.demo.parallellelExample(completion)
+end sub
+

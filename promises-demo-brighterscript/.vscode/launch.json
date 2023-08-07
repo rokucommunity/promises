@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "brightscript",
+            "request": "launch",
+            "name": "BrightScript Debug: Launch",
+            "stopOnEntry": false,
+            "rootDir": "${workspaceFolder}/dist",
+            //run the BrighterScript build before each launch
+            "preLaunchTask": "build"
+        },
+        {
+            "type": "brightscript",
+            "request": "launch",
+            "name": "BrightScript Debug: Launch (Watch)",
+            "stopOnEntry": false,
+            "rootDir": "${workspaceFolder}/dist",
+            //kick off the bsc watcher before launching
+            "preLaunchTask": "watch",
+            "retainStagingFolder": false,
+            "enableDebuggerAutoRecovery": false,
+            "stopDebuggerOnAppExit": false
+        }
+    ]
+}

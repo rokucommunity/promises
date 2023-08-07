@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="NetworkManager" extends="Task">
+  <interface>
+    <field id="url" type="string" />
+    <field id="verb" type="string" />
+    <field id="promise" type="node" />
+  </interface>
+</component>

@@ -1,0 +1,75 @@
+class Demo
+    ' demo urls
+    url = "http://ip-api.com/json/"
+    urlGoogle = "http://ip-api.com/json/google.com"
+    urlError = "http://ip-api.com/json/error"
+    sub simpleExample(myCompletion = invalid as function)
+        context = {
+            callback: myCompletion
+        }
+        ' swap out url for urlError to catch an error
+        promise = m.asyncNetworkCall(m.url)
+        promises.onThen(promise, sub(response, context)
+            print "Got the response!!!", response
+            context.callback(InitResult(true, "Succeded"))
+        end sub, context)
+        promises.onCatch(promise, sub(response, context)
+            print "Caught an error!!!", response
+            context.callback(InitResult(true, "Failed"))
+        end sub, context)
+        promises.onFinally(promise, sub(context)
+            print(`Simple promise completed!!!`)
+        end sub, context)
+    end sub
+
+    sub chainExample(myCompletion = invalid as function)
+        context = {
+            callback: myCompletion
+        }
+        ' swap out url for urlError to catch an error
+        promise = m.asyncNetworkCall(m.url)
+        promises.chain(promise, context).then(sub(response, context)
+            print "Chain got the response!!!", response
+            context.callback(InitResult(true, "Succeded"))
+        end sub).catch(sub(response, context)
+            print "Chain caught an error!!!", response
+            context.callback(InitResult(false, "Failed"))
+        end sub).finally(sub(context)
+            print "Chain promise completed"
+        end sub)
+    end sub
+
+    sub parallellelExample(myCompletion = invalid as function)
+        context = {
+            callback: myCompletion
+        }
+        ' uncomment the urlError line to catch an error
+        promise = promises.all([
+            m.asyncNetworkCall(m.url)
+            m.asyncNetworkCall(m.urlGoogle)
+            ' m.asyncNetworkCall(m.urlError)
+        ])
+        promises.chain(promise, context).then(sub(results, context)
+            print "Parallelle got the responses!!!"
+            print(`currentIP: ${results[0].text}`) 
+            print(`google.com ${results[1].text}`)
+            ' print(`error ${results[2].text}`)
+            context.callback(InitResult(true, "Succeded"))
+        end sub).catch(sub(results, context)
+            print(`Parallelle caught error!!!`)
+            context.callback(InitResult(false, "Failed"))
+        end sub).finally(sub()
+            print("Parallelle promises complete")
+        end sub)
+    end sub
+
+    function asyncNetworkCall(url as string) as dynamic
+        promise = promises.create()
+        task = CreateObject("roSGNode", "NetworkManager")
+        task.url = url
+        task.verb = "GET"
+        task.promise = promise
+        task.control = "RUN"
+        return promise
+    end function
+end class

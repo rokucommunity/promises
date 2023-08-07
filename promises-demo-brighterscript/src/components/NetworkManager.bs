@@ -1,0 +1,17 @@
+import "pkg:/source/promises.bs"
+import "pkg:/source/Requests.brs"
+
+sub init()
+    m.top.functionName = "makeRequest"
+end sub
+
+sub makeRequest()
+    ' Requests libary is used to handle network calls. https://github.com/rokucommunity/roku-requests/
+    result = Requests().request(m.top.verb, m.top.url, {"headers": {"ContentType": "application/json"}})
+    print(`MakeRequest ${result.json.status}`)
+    if result.ok and result.json.status <> "fail"
+        promises.resolve(result, m.top.promise)
+    else 
+        promises.reject(result, m.top.promise)
+    end if
+end sub

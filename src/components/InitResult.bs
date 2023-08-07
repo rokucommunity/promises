@@ -1,0 +1,18 @@
+class InitResult
+    private success as boolean = false
+    private message as string
+
+    private sub new(success as boolean, message as string)
+        m.success = success
+        m.message = message
+    end sub
+
+    function isSuccess() as boolean
+        return m.success
+    end function
+
+    function getMessage() as string
+        return m.message
+    end function
+
+end class
