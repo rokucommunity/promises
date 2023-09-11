@@ -32,9 +32,10 @@ jobs:
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ./.npmrc
       - run: npm ci
 
-      #create npm package
-      - run: npm pack
-
+      # Make the promises.zip, remove promises_ prefix in prep for ropm publishing
+      - name: Build project, prepare github release, prepare for npm/ropm release
+        run: npm run prepare-releases
+        
       #create GitHub release
       - name: Create GitHub Release
         id: create_release
@@ -53,19 +54,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          asset_paths: '["./dist/components/Promise.xml", "./dist/source/promises.brs", "./dist/source/promises.brs.map", "./dist/source/promises.d.bs"]'
+          asset_paths: '["promises.zip", "./*.tgz"]'
 
-      - name: "Prepare package for ropm"
-        run: npx ts-node ./src/ropm-preprocess.ts
-
-      #upload to npm
-      - run: npm publish
-
-      #upload package to GitHub release
-      - name: Upload GitHub Release Assets (npm package)
-        uses: alexellis/upload-assets@0.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          asset_paths: '["./*.tgz"]'
-
+      # publish to npm
+      #- run: npm publish

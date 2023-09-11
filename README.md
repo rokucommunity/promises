@@ -17,7 +17,7 @@ npx ropm install promises@npm:@rokucommunity/promises
 ```
 
 ### Manual install
-1. Download the latest release from [releases](https://github.com/rokucommunity/promises/releases) and extract the zip.
+1. Download the latest `promises.zip` release from [releases](https://github.com/rokucommunity/promises/releases) and extract the zip.
 2. Copy the files into your `pkg:/source` and `pkg:/components` folders. Your project structure should look something like this if you've done it correctly:
 
     ```graphql

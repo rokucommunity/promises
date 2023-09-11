@@ -1,6 +1,8 @@
+' @rokucommunity/promises ${VERSION_NUMBER}
 #const PROMISES_DEBUG = false
 
 namespace promises
+    ' Create a new promise
     function create() as dynamic
         'create a unique ID for this promise
         id = "promise-" + promises.internal.createUuid()
@@ -155,13 +157,14 @@ namespace promises
 
         subType = lCase(promise.subType())
 
+        if subType.endsWith("_promise") then
+            return true
+        end if
+
         if subType = "promise" then
             return true
         end if
 
-        if subType.endsWith("_promise") then
-            return true
-        end if
         while true
             subType = promise.parentSubtype(subType)
             if lCase(subType).endsWith("_promise") then return true
