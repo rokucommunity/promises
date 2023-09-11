@@ -1,4 +1,6 @@
 {
     "rootDir": "./src",
-    "stagingDir": "./dist"
+    "stagingDir": "./dist",
+    "emitDefinitions": true,
+    "sourceMap": true
 }
