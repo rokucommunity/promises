@@ -53,7 +53,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          asset_paths: '["./dist/components/Promise.xml", "./dist/source/promises.brs", "./dist/source/promises.d.bs"]'
+          asset_paths: '["./dist/components/Promise.xml", "./dist/source/promises.brs", "./dist/source/promises.brs.map", "./dist/source/promises.d.bs"]'
 
       - name: "Prepare package for ropm"
         run: npx ts-node ./src/ropm-preprocess.ts
