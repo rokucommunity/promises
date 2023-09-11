@@ -11,10 +11,11 @@ A Promise-like implementation for BrightScript/Roku. This is the core functional
 
 ## Installation
 ### ropm
-The preferred installation method is via [ropm](https://www.npmjs.com/package/ropm);
+The preferred installation method is via [ropm](https://www.npmjs.com/package/ropm), utilizing the [alias](https://github.com/rokucommunity/ropm#renaming-modules) feature to shorten `rokucommunity_promises_` to just `promises_`;
 ```bash
-ropm install @rokucommunity/promises
+npx ropm install promises@npm:@rokucommunity/promises
 ```
+
 ### Manual install
 1. Download the latest release from [releases](https://github.com/rokucommunity/promises/releases) and extract the zip.
 2. Copy the files into your `pkg:/source` and `pkg:/components` folders. Your project structure should look something like this if you've done it correctly:

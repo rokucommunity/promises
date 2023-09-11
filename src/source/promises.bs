@@ -10,7 +10,7 @@ namespace promises
                 m.__promises__idSequence = 0
             end if
             m.__promises__idSequence++
-            id = `promise-${m.__promises__idSequence}`
+            id = "promise-" + m.__promises__idSequence.ToStr()
         #end if
 
         #if PROMISES_DEBUG
