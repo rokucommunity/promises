@@ -11,7 +11,7 @@ A Promise-like implementation for BrightScript/Roku. This is the core functional
 
 ## Installation
 ### ropm
-The preferred installation method is via [ropm](https://www.npmjs.com/package/ropm), utilizing the [alias](https://github.com/rokucommunity/ropm#renaming-modules) feature to shorten `rokucommunity_promises_` to just `promises_`;
+The preferred installation method is via [ropm](https://www.npmjs.com/package/ropm)
 ```bash
 npx ropm install promises@npm:@rokucommunity/promises
 ```
