@@ -49,7 +49,7 @@ jobs:
 
       #upload package to GitHub release
       - name: Upload GitHub Release Assets (./dist code)
-        uses: alexellis/upload-assets@0.2.3
+        uses: alexellis/upload-assets@0.4.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -63,7 +63,7 @@ jobs:
 
       #upload package to GitHub release
       - name: Upload GitHub Release Assets (npm package)
-        uses: alexellis/upload-assets@0.2.3
+        uses: alexellis/upload-assets@0.4.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
