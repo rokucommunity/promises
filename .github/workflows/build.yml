@@ -57,4 +57,4 @@ jobs:
           asset_paths: '["promises.zip", "./*.tgz"]'
 
       # publish to npm
-      #- run: npm publish
+      - run: npm publish
