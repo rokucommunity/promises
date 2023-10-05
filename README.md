@@ -16,6 +16,8 @@ The preferred installation method is via [ropm](https://www.npmjs.com/package/ro
 npx ropm install promises@npm:@rokucommunity/promises
 ```
 
+**NOTE:** if your project lives in a subdirectory, make sure you've configured your ropm `rootDir` folder properly. ([instructions](https://github.com/rokucommunity/ropm#rootdir))
+
 ### Manual install
 1. Download the latest `promises.zip` release from [releases](https://github.com/rokucommunity/promises/releases) and extract the zip.
 2. Copy the files into your `pkg:/source` and `pkg:/components` folders. Your project structure should look something like this if you've done it correctly:
@@ -42,14 +44,14 @@ The heart of this library is the `Promise` SGNode type. Here's its contents:
 </component>
 ```
 
-`promiseState` represents the current status of the promise. Promises can have one of three states: 
+`promiseState` represents the current status of the promise. Promises can have one of three states:
 - `"resolved"` - the operation this promise represents has completed successfully. Often times a resolved promise will contain data.
 - `"rejected"` - the asynchronous operation this promise represents has completed unsuccessfully. Often times this promise will include an error explaining what caused the rejection.
-- `"pending"` - the promise has not yet been completed (i.e. the promise is _not_ resolved and _not_ rejected). 
+- `"pending"` - the promise has not yet been completed (i.e. the promise is _not_ resolved and _not_ rejected).
 
-`promiseResult` is the "value" of the promise when resolved, or an [error](https://developer.roku.com/docs/references/brightscript/language/error-handling.md#the-exception-object) when rejected. 
+`promiseResult` is the "value" of the promise when resolved, or an [error](https://developer.roku.com/docs/references/brightscript/language/error-handling.md#the-exception-object) when rejected.
 
-You'll notice there is no `<field id="promiseResult">` defined on the `Promise` node above. That's because, in order to support all possible return types, we cannot define the `promiseResult` field ahead of time because the BrightScript runtime will throw type mismatch errors when using a different field type than defined. The internal promise logic will automatically add the field when the promise is resolved or rejected. 
+You'll notice there is no `<field id="promiseResult">` defined on the `Promise` node above. That's because, in order to support all possible return types, we cannot define the `promiseResult` field ahead of time because the BrightScript runtime will throw type mismatch errors when using a different field type than defined. The internal promise logic will automatically add the field when the promise is resolved or rejected.
 
 If you're creating promises without using this library, you can resolve or reject a promise with the following logic. Be sure to set `promiseState` last to ensure that `promiseResult` is avaiable when the observers of `promiseState` are notified.
 
@@ -68,21 +70,21 @@ end sub
 
 Much of this design is based on JavaScript [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise). However, there are some differences.
 
-1. BrightScript does not have closures, so we couldn't implement the standard `then` function on the `Promise` SGNode because it would strip out the callback function and lose all context. 
+1. BrightScript does not have closures, so we couldn't implement the standard `then` function on the `Promise` SGNode because it would strip out the callback function and lose all context.
 2. Our promises are also [deferred](https://dev.to/webduvet/deferred-promise-pattern-2j59) objects. Due to the nature of scenegraph nodes, we have no way of separating the promise instance from its resolution. In practice this isn't a big deal, but just keep in mind, there's no way to prevent a consumer of your promise instance from resolving it themselves, even though they shouldn't do that.
 
 ### Cross-library compatibility
-This design has been written up as a specification. That meaning, it shouldn't matter which library creates the promise. Your own application code could write custom logic to make your own promises, and they should be interoperable with any other. The core way that promises are interoperable is that they have a field called `promiseState` for checking its state, and then getting the result from `promiseResult`. 
+This design has been written up as a specification. That meaning, it shouldn't matter which library creates the promise. Your own application code could write custom logic to make your own promises, and they should be interoperable with any other. The core way that promises are interoperable is that they have a field called `promiseState` for checking its state, and then getting the result from `promiseResult`.
 
 ## Differences from [roku-promise](https://github.com/rokucommunity/roku-promise)
-[roku-promise](https://github.com/rokucommunity/roku-promise) is a popular promise-like library that was created by [@briandunnington](https://github.com/briandunnington) back in 2018. roku-promise creates tasks for you, executes the work, then returns some type of response to your code in the form of a callback. 
+[roku-promise](https://github.com/rokucommunity/roku-promise) is a popular promise-like library that was created by [@briandunnington](https://github.com/briandunnington) back in 2018. roku-promise creates tasks for you, executes the work, then returns some type of response to your code in the form of a callback.
 
-The big difference is, @rokucommunity/promises does not manage tasks at all. The puropose of a promise is to create an object that represents the future completion of an asynchronous operation. It's not supposed to initiate or execute that operation, just represent its status. 
+The big difference is, @rokucommunity/promises does not manage tasks at all. The puropose of a promise is to create an object that represents the future completion of an asynchronous operation. It's not supposed to initiate or execute that operation, just represent its status.
 
-So by using @rokucommunity/promises, you'll need to create `Task` nodes yourself, create the promises yourself (using our helper library), then mark the promise as "completed" when the task has finished its work. 
+So by using @rokucommunity/promises, you'll need to create `Task` nodes yourself, create the promises yourself (using our helper library), then mark the promise as "completed" when the task has finished its work.
 
 ## Usage
-Typically you'll be creating promises from inside [Task](https://developer.roku.com/docs/references/scenegraph/control-nodes/task.md) nodes. Then, you'll return those promises immediately, but keep them around for when you are finished with the async task. 
+Typically you'll be creating promises from inside [Task](https://developer.roku.com/docs/references/scenegraph/control-nodes/task.md) nodes. Then, you'll return those promises immediately, but keep them around for when you are finished with the async task.
 
 Here's a small example
 To create a promise:
@@ -117,7 +119,7 @@ end function
 Notice how the context is made avaiable inside your callback? Under the hood, we store the promise, the callback, and context all in a secret `m` variable, so they never pass through any node boundaries. That means you can store literally any variable you want on there, without worrying about the data getting stripped away by SceneGraph's data sanitization process. (don't worry, we clean all that stuff up when the promise resolves so there's no memory leaks)
 
 ### Chaining
-Building on the previous example, there are situations where you may want to run several async operations in a row, waiting for each to complete before moving on to the next. That's where `promises.chain()` comes in. It handles chaining multiple async operations, and handling errors in the flow as well. 
+Building on the previous example, there are situations where you may want to run several async operations in a row, waiting for each to complete before moving on to the next. That's where `promises.chain()` comes in. It handles chaining multiple async operations, and handling errors in the flow as well.
 
 Here's the flow, written out in words:
 
@@ -179,9 +181,9 @@ end function
 ```
 
 ## How it works
-While the promise spec is interoperable with any other promise node created by other libraries, the `promises` namespace is the true magic of the @rokucommunity/promises library. We have several helper functions that enable you to chain multiple promises together, very much in the same way as javascript promises. 
+While the promise spec is interoperable with any other promise node created by other libraries, the `promises` namespace is the true magic of the @rokucommunity/promises library. We have several helper functions that enable you to chain multiple promises together, very much in the same way as javascript promises.
 
 
 ## Limitations
 ### no support for roMessagePort
-Promises do not currently work with [message ports](https://developer.roku.com/docs/references/brightscript/components/romessageport.md). So this means you'll only be able to _observe_ promises and get callbacks from the render thread. In practice, this probably isn't much of a limitation, but still something to keep in mind. 
+Promises do not currently work with [message ports](https://developer.roku.com/docs/references/brightscript/components/romessageport.md). So this means you'll only be able to _observe_ promises and get callbacks from the render thread. In practice, this probably isn't much of a limitation, but still something to keep in mind.
