@@ -211,7 +211,8 @@ namespace promises
 
     ' Makes sure the value supplied is a promise
     function ensurePromise(value as object) as object
-        return promises.isPromise(value) ? value : promises.resolve(value)
+        if promises.isPromise(value) then return value
+        return promises.resolve(value)
     end function
 end namespace
 
