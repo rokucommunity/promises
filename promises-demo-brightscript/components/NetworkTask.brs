@@ -7,8 +7,10 @@ end sub
 sub makeRequest()
     try
         result = getNetworkResult(m.top.url, m.top.method, m.top.body)
-        data = ParseJson(result.data)
-        promises_resolve(data, m.top.promise)
+        if (result.data <> invalid)
+            result = ParseJson(result.data)
+        end if
+        promises_resolve(result, m.top.promise)
     catch e
         promises_reject(e, m.top.promise)
     end try
@@ -46,7 +48,7 @@ function getNetworkResult(url as string, method as string, body as object) as ob
             return {
                 error: true
                 responseCode: responseCode
-                data: responseString
+                data: invalid
             }
         end if
     end if
