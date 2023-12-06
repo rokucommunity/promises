@@ -5,7 +5,6 @@ sub init()
     m.top.observeFieldScoped("parallelResult", "onParallelResultChange")
 
     'Uncomment the example below to run...
-    ' networkCall("http://ip-api.com/json/")
 
     'Simple single request
     ' simpleExample("http://ip-api.com/json/")
@@ -14,7 +13,7 @@ sub init()
     ' chainExample()
 
     'Parallel requests
-    parallelExample()
+    ' parallelExample()
 
     'Simple single request with error response
     ' simpleExample("http://invalid--url.com")
