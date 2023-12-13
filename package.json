@@ -7,7 +7,7 @@
   "scripts": {
     "preversion": "npm run build",
     "build": "bsc --create-package=false",
-    "test": "echo it works!",
+    "test": "echo it works 2!",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts"
   },
   "devDependencies": {
