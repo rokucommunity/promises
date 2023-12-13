@@ -21,9 +21,9 @@ jobs:
         uses: MasterworksIO/action-local-cache@2
         with:
           strategy: move
-          path: ~/.npm
+          path: .npm
           key: ${{ env.NODE_VERSION }}
-      - run: npm ci
+      - run: npm ci --cache .npm
       - run: npm run build
       - run: npm run test
   npm-release:
