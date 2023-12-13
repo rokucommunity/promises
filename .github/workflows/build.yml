@@ -6,6 +6,8 @@ on:
     tags:
       - v*
   pull_request:
+env:
+  NODE_VERSION: "18.15.0"
 
 jobs:
   ci:
@@ -14,7 +16,7 @@ jobs:
       - uses: actions/checkout@master
       - uses: actions/setup-node@master
         with:
-          node-version: "18.15.0"
+          node-version: ${{ env.NODE_VERSION }}
       - run: npm ci
       - run: npm run build
       - run: npm run test
