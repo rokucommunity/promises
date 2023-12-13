@@ -6,17 +6,26 @@ on:
     tags:
       - v*
   pull_request:
+env:
+  NODE_VERSION: "18.15.0"
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@master
         with:
-          node-version: "18.15.0"
-      - run: npm ci
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Load local npm cache for node ${{ env.NODE_VERSION }}
+        uses: MasterworksIO/action-local-cache@2
+        with:
+          strategy: move
+          path: .npm
+          key: ${{ env.NODE_VERSION }}
+      - run: npm ci --cache .npm
       - run: npm run build
+      - run: npm run test
   npm-release:
     #only run this task for version-tagged releases
     if: startsWith(github.ref, 'refs/tags/v')
@@ -35,7 +44,7 @@ jobs:
       # Make the promises.zip, remove promises_ prefix in prep for ropm publishing
       - name: Build project, prepare github release, prepare for npm/ropm release
         run: npm run prepare-releases
-        
+
       #create GitHub release
       - name: Create GitHub Release
         id: create_release
