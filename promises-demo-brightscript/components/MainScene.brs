@@ -7,7 +7,7 @@ sub init()
     'Uncomment the example below to run...
 
     'Simple single request
-    ' simpleExample("http://ip-api.com/json/")
+    ' separateCallbacksExample("http://ip-api.com/json/")
 
     'Chain requests
     ' chainExample()
@@ -16,7 +16,7 @@ sub init()
     ' parallelExample()
 
     'Simple single request with error response
-    ' simpleExample("http://invalid--url.com")
+    ' separateCallbacksExample("http://invalid--url.com")
 end sub
 
 function networkRequest(url as string, method = "GET" as string, body = {} as object) as object
@@ -30,7 +30,7 @@ function networkRequest(url as string, method = "GET" as string, body = {} as ob
     return promise
 end function
 
-sub simpleExample(url as string, method = "GET" as string)
+sub separateCallbacksExample(url as string, method = "GET" as string)
     context = {
         result: invalid
     }
@@ -65,14 +65,26 @@ sub chainExample()
 
     promise = networkRequest("http://ip-api.com/json/")
 
-    promises_chain(promise, context).then(function(response, context)
-        if (response.error = invalid)
-            return getTimeApiTimeToFiji(response.timezone)
+    promises_chain(promise, context).then(function(ipApiData, context)
+        if (ipApiData.error = invalid)
+            print "Promises chain first call completed!!!"
+            return getTimeApiTimeToFiji(ipApiData.timezone)
+        else
+            print "Promises chain first call failed!!!"
+            return {
+                error: true
+            }
         end if
 
-    end function).then(function(response, context)
-        if (response.error = invalid)
-            context.result = getChainResultString(response)
+    end function).then(function(timeApiData, context)
+        if (timeApiData.error = invalid)
+            print "Promises chain second call completed!!!"
+            context.result = getChainResultString(timeApiData)
+        else
+            print "Promises chain second call failed!!!"
+            context.result = {
+                error: true
+            }
         end if
 
         m.top.chainResult = context
@@ -91,12 +103,12 @@ sub parallelExample()
         getIpApiTimeZoneByDomain("netflix.com")
         getIpApiTimeZoneByDomain("chatgpt.com")
     ])
-    promises_chain(promises).then(function(results)
+    promises_chain(promises).then(function(timezones)
         m.top.parallelResult = {
             result: [
-                "Google.com's timezone is " + results[0].timezone,
-                "Netflix.com's timezone is " + results[1].timezone,
-                "ChatGPT.com's timezone is " + results[2].timezone
+                "Google.com's timezone is " + timezones[0].timezone,
+                "Netflix.com's timezone is " + timezones[1].timezone,
+                "ChatGPT.com's timezone is " + timezones[2].timezone
             ]
         }
 
@@ -107,7 +119,7 @@ sub parallelExample()
 end sub
 
 '****************************************************************
-'#region *** CALLBACKS
+'#region *** OBSERVER CALLBACKS
 '****************************************************************
 
 sub onSimpleResultChange(event as object)
@@ -116,17 +128,19 @@ sub onSimpleResultChange(event as object)
 end sub
 
 sub onChainResultChange(event as object)
+    print "onChainResultChange:"
     print event.getData().result
 end sub
 
 sub onParallelResultChange(event as object)
+    print "onParallelResultChange:"
     for each resultStr in event.getData().result
         print resultStr
     end for
 end sub
 
 '****************************************************************
-'#endregion *** CALLBACKS
+'#endregion *** OBSERVER CALLBACKS
 '****************************************************************
 
 '****************************************************************
@@ -142,7 +156,6 @@ function getTimeApiTimeToFiji(fromTimeZone as object) as object
     print "Your timezone is " + fromTimeZone
     url = "https://timeapi.io/api/Conversion/ConvertTimeZone"
     method = "POST"
-    date = CreateObject("roDateTime")
 
     body = {
         "fromTimeZone": fromTimeZone
