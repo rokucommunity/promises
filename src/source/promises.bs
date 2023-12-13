@@ -301,6 +301,11 @@ namespace promises.internal
             ' unregister any observers once the promise is completed
             promises.internal.unobserveFieldScoped(originalPromise, promises.internal.PromiseField.promiseState)
             promiseStorage = promises.internal.getPromiseStorage(originalPromise)
+            ' Delete the storage for this promise since we are going to handled all of the current listeners.
+            ' Any new listeners created as a result of the logic in the callbacks will
+            ' register a new instance of the promise storage item. If a new storage item is created
+            ' we will notify the new listeners when we are done with the current ones.
+            promises.internal.clearPromiseStorage(originalPromise)
 
             promiseState = originalPromise.promiseState
             promiseResult = originalPromise.promiseResult
@@ -326,10 +331,21 @@ namespace promises.internal
                 'TODO giant memory leak. if you see this, delete it immediately!
                 m.__promises__debug.push(promiseStorage)
             #end if
-            'delete the storage for this promise since we've handled all of the listeners
-            promises.internal.clearPromiseStorage(originalPromise)
+
+            if promises.internal.hasStorage(originalPromise) then
+                ' There were listeners added as a result of some of the callback notifications
+                ' Re-trigger the notification process for the new listeners
+                promises.internal.delay(sub (event as object)
+                    promises.internal.notifyListeners(event)
+                end sub, event)
+            end if
         end if
     end sub
+
+    ' Used to check if there is a storage item of listeners for the supplied promise
+    function hasStorage(promise as dynamic) as boolean
+		return m.doesExist("__promises__" + promise.id)
+	end function
 
     ' We use an internal value to represent unset. Check if the parameter is that value
     function isSet(value as dynamic) as boolean
