@@ -344,8 +344,8 @@ namespace promises.internal
 
     ' Used to check if there is a storage item of listeners for the supplied promise
     function hasStorage(promise as dynamic) as boolean
-		return m.doesExist("__promises__" + promise.id)
-	end function
+        return m.doesExist("__promises__" + promise.id)
+    end function
 
     ' We use an internal value to represent unset. Check if the parameter is that value
     function isSet(value as dynamic) as boolean
