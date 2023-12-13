@@ -17,6 +17,12 @@ jobs:
       - uses: actions/setup-node@master
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - name: Load local npm cache for node ${{ env.NODE_VERSION }}
+        uses: MasterworksIO/action-local-cache@2
+        with:
+          strategy: move
+          path: ~/.npm
+          key: ${{ env.NODE_VERSION }}
       - run: npm ci
       - run: npm run build
       - run: npm run test
