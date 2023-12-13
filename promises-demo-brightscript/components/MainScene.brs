@@ -6,7 +6,13 @@ sub init()
 
     'Uncomment the example below to run...
 
-    'Simple single request
+    'Simple network request example (passing in the `m` scope as context)
+    ' promise = networkRequest("http://ip-api.com/json/", "GET")
+    ' promises_onThen(promise, sub(response as object, context = {} as dynamic)
+    '     print "Your timezone is " + response.timezone
+    ' end sub, m)
+
+    'Simple single request using method
     ' separateCallbacksExample("http://ip-api.com/json/")
 
     'Chain requests
@@ -15,7 +21,7 @@ sub init()
     'Parallel requests
     ' parallelExample()
 
-    'Simple single request with error response
+    'Simple single request using method with error handling
     ' separateCallbacksExample("http://invalid--url.com")
 end sub
 
