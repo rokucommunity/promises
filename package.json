@@ -7,14 +7,15 @@
   "scripts": {
     "preversion": "npm run build",
     "build": "bsc --create-package=false",
-    "test": "echo it works 3!",
     "unit": "bsc --project bsconfig-unit.json",
+    "test": "npm run unit; npx ts-node ./scripts/runUnitTestsOnDevice.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
     "@types/node": "^20.6.0",
     "brighterscript": "^0.65.5",
+    "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
     "roku-deploy": "^3.10.3",
     "rooibos-roku": "^5.8.0",

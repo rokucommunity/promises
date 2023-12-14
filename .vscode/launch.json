@@ -2,11 +2,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "run tests",
+            "name": "run unit tests",
             "type": "brightscript",
             "request": "launch",
-            "host": "192.168.0.22",
-            "password": "ahov",
+            "host": "${env:ROKU_HOST}",
+            "password": "${env:ROKU_PASSWORD}",
             "rootDir": "${workspaceFolder}/dist",
             "preLaunchTask": "unit",
             "enableDebuggerAutoRecovery": true,
@@ -14,6 +14,16 @@
             "enableVariablesPanel": false,
             "injectRaleTrackerTask": false,
             "enableDebugProtocol": true
+        },
+        {
+            "name": "debug unit test runner script",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/runUnitTestsOnDevice.ts",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ]
         }
     ]
 }
