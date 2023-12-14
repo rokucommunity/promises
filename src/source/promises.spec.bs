@@ -1,0 +1,144 @@
+import "pkg:/source/promises.bs"
+
+namespace tests
+	@SGNode("test")
+	@suite
+	class PromisesTests extends rooibos.BaseTestSuite
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promise tests")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		@it("create promise")
+		sub _()
+			promise = promises.create()
+			m.assertTrue(promises.isPromise(promise))
+		end sub
+
+		@it("promise validation")
+		sub _()
+			m.assertTrue(promises.isPromise(promises.create()))
+			promiseNode = createNode("node", { promiseState: 0 })
+			m.assertTrue(promises.isPromise(promiseNode))
+			notPromise = createNode()
+			m.assertFalse(promises.isPromise(notPromise))
+			m.assertFalse(promises.isPromise(invalid))
+		end sub
+
+		@it("promise settlement check")
+		sub _()
+			m.assertFalse(promises.isComplete(promises.create()))
+			m.assertTrue(promises.isComplete(promises.resolve({})))
+			m.assertTrue(promises.isComplete(promises.reject({})))
+			m.assertFalse(promises.isComplete(createNode()))
+			m.assertFalse(promises.isComplete(invalid))
+		end sub
+
+		@async
+		@it("promise chain")
+		sub _()
+			promises.chain(promises.resolve(1)).then(sub(_)
+				m.testSuite.assertTrue(_ = 1, _.tostr())
+			end sub).catch(sub(_)
+				m.testSuite.assertFalse(true, _.tostr())
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("resolving all promises")
+		sub _()
+			promises.chain(promises.all([
+				promises.resolve(1)
+				promises.resolve(2)
+				promises.resolve(3)
+			])).then(sub(_)
+				msg = "resolved promise result should be [1,2,3]"
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1,2,3]), msg)
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("rejecting all promises")
+		sub _()
+			promises.chain(promises.all([
+				promises.resolve(1)
+				promises.reject(2)
+				promises.resolve(3)
+			])).then(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(_)
+				msg = "rejected promise result should be 2"
+				m.testSuite.assertEqual(_, 2, msg)
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("thenable promise")
+		sub _()
+			promises.onThen(promises.resolve("thenable"), sub(_)
+				m.testSuite.assertTrue(_ = "thenable", "resolved " + _)
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("catchable promise")
+		sub _()
+			promises.onCatch(promises.reject("catchable"), sub(_)
+				m.testSuite.assertTrue(_ = "catchable", "rejected " + _)
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("finalable promise")
+		sub _()
+			promises.onFinally(promises.resolve("finalable"), sub()
+				m.testSuite.assertTrue(true, "settled")
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("timer promise")
+		function _()
+			timerDurationInMillis = 125
+			promise = sleepPromise(timerDurationInMillis / 1000)
+			promises.onThen(promise, sub(_ as dynamic, ctx as dynamic)
+				elapsedTimeInMillis = ctx.timespan.totalMilliseconds()
+				? "elapsed time to resolve promise:" + elapsedTimeInMillis.tostr()
+				tolerance = ctx.timerDurationInMillis * 0.1
+				msg = "did not settle within 10% tolerance of timer duration"
+				m.testSuite.assertTrue(ctx.timerDurationInMillis - tolerance <= elapsedTimeInMillis, msg)
+				m.testSuite.assertTrue(ctx.timerDurationInMillis + tolerance >= elapsedTimeInMillis, msg)
+				m.testSuite.done()
+			end sub, {
+				timespan: createObject("roTimespan")
+				timerDurationInMillis: timerDurationInMillis
+			})
+		end function
+
+	end class
+end namespace
+
+function createNode(nodeType = "Node" as string, fields = {} as dynamic) as object
+	node = createObject("roSGNode", nodeType)
+	node.update(fields, true)
+	return node
+end function
+
+function sleepPromise(duration = 0.0001 as float) as dynamic
+	promise = promises.create()
+	promises.internal.delay(sub(promise as dynamic)
+		promises.resolve(true, promise)
+	end sub, promise, duration)
+	return promise
+end function

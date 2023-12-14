@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "run tests",
+            "type": "brightscript",
+            "request": "launch",
+            "host": "192.168.0.22",
+            "password": "ahov",
+            "rootDir": "${workspaceFolder}/dist",
+            "preLaunchTask": "unit",
+            "enableDebuggerAutoRecovery": true,
+            "stopDebuggerOnAppExit": true,
+            "enableVariablesPanel": false,
+            "injectRaleTrackerTask": false,
+            "enableDebugProtocol": true
+        }
+    ]
+}
