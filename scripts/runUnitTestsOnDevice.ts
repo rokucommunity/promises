@@ -1,10 +1,9 @@
-import * as dotenv from 'dotenv';
 import * as Net from 'net';
 import * as rokuDeploy from 'roku-deploy';
 import * as path from 'path';
-
+import * as dotenv from 'dotenv';
 dotenv.config();
-let env = process.env;
+const env = process.env;
 
 env.CODE_COVERAGE = '';
 

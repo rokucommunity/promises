@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "unit",
-      "type": "npm",
-      "script": "unit"
+      "label": "build-tests",
+      "type": "shell",
+      "command": "npm run build-tests"
     }
   ]
 }

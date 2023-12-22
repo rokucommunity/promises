@@ -8,6 +8,5 @@
         "**/Thumbs.db": true,
         "**/node_modules": true
     },
-    "brightscript.debug.envFile": "${workspaceFolder}/.env",
     "brightscript.bsdk": "./node_modules/brighterscript"
 }
