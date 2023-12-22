@@ -1,12 +1,13 @@
 {
   "name": "@rokucommunity/promises",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "RokuCommunity",
   "license": "MIT",
   "description": "A Promise-like implementation for BrightScript/Roku",
   "scripts": {
     "preversion": "npm run build",
     "build": "bsc --create-package=false",
+    "test": "echo it works 3!",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts"
   },
   "devDependencies": {
