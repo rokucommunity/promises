@@ -1,0 +1,11 @@
+<?rokuml version="1.0" encoding="utf-8"?>
+<component name="NetworkTask" extends="Task">
+    <script type="text/brightscript" uri="NetworkTask.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/promises.brs"/>
+    <interface>
+        <field id="url" type="string"/>
+        <field id="method" type="string"/>
+        <field id="body" type="assocarray"/>
+        <field id="promise" type="node"/>
+    </interface>
+</component>
