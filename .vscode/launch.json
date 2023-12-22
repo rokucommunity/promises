@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug unit tests",
+            "type": "brightscript",
+            "request": "launch",
+            "rootDir": "${workspaceFolder}/dist",
+            "preLaunchTask": "build-tests",
+            "enableDebuggerAutoRecovery": true,
+            "stopDebuggerOnAppExit": true,
+            "enableVariablesPanel": false,
+            "injectRaleTrackerTask": false,
+            "enableDebugProtocol": true
+        }
+    ]
+}
