@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene">
+    <script type="text/brightscript" uri="MainScene.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/promises.brs"/>
+    <interface>
+        <field id="simpleResult" type="assocarray"/>
+        <field id="chainResult" type="assocarray"/>
+        <field id="parallelResult" type="assocarray"/>
+    </interface>
+    <children>
+        <Poster id="backgroundImage" uri="pkg:/images/splash-screen_{size}.png"/>
+    </children>
+</component>
