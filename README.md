@@ -33,6 +33,9 @@ npx ropm install promises@npm:@rokucommunity/promises
     └─ manifest
     ```
 
+## Demos
+You can check out a few demos in the [demos/](./demos) folder to see some good examples of how to use this library in practice.
+
 ## Anatomy of the `Promise` node
 The heart of this library is the `Promise` SGNode type. Here's its contents:
 
