@@ -174,7 +174,7 @@ function loadProfilePage(authToken as string)
         getUserData(authToken),
         getUpgradeOptions(authToken)
     ])
-    promises.chain(promises).then(function(results)
+    promises.chain(promise).then(function(results)
         print results[0] ' profileImageUrl result
         print results[1] ' userData result
         print results[2] ' upgradeOptions result
