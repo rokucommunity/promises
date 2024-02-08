@@ -42,7 +42,7 @@ The heart of this library is the `Promise` SGNode type. Here's its contents:
 ```xml
 <component name="Promise" extends="Node">
     <interface>
-        <field id="promiseState" type="string" value="pending" alwaysNotify="true" />
+        <field id="tate" type="string" value="pending" alwaysNotify="true" />
     </interface>
 </component>
 ```
@@ -174,7 +174,7 @@ function loadProfilePage(authToken as string)
         getUserData(authToken),
         getUpgradeOptions(authToken)
     ])
-    promises.chain(promises).then(function(results)
+    promises.chain(promise).then(function(results)
         print results[0] ' profileImageUrl result
         print results[1] ' userData result
         print results[2] ' upgradeOptions result
