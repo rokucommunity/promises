@@ -42,7 +42,7 @@ The heart of this library is the `Promise` SGNode type. Here's its contents:
 ```xml
 <component name="Promise" extends="Node">
     <interface>
-        <field id="tate" type="string" value="pending" alwaysNotify="true" />
+        <field id="promiseState" type="string" value="pending" alwaysNotify="true" />
     </interface>
 </component>
 ```
