@@ -43,7 +43,7 @@ jobs:
 
       # Make the promises.zip, remove promises_ prefix in prep for ropm publishing
       - name: Build project, prepare github release, prepare for npm/ropm release
-        run: npm run prepare-releases
+        run: npm run preversion
 
       #create GitHub release
       - name: Create GitHub Release
