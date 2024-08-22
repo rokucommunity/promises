@@ -122,7 +122,12 @@ namespace promises
         end if
         if not promises.isComplete(promise) then
             ' console.trace("[promises.resolve]", promise.id)
-            promise.update({ promiseResult: result }, true)
+            if type(result) = "roAssociativeArray" then
+                promise.removeField("promiseResult")
+                promise.addFields({ promiseResult: result })
+            else
+                promise.update({ promiseResult: result }, true)
+            end if
             promise.promiseState = promises.internal.PromiseState.resolved
         end if
         return promise
@@ -134,7 +139,12 @@ namespace promises
         end if
         if not promises.isComplete(promise) then
             ' console.trace("[promises.reject]", promise.id)
-            promise.update({ promiseResult: error }, true)
+            if type(error) = "roAssociativeArray" then
+                promise.removeField("promiseResult")
+                promise.addFields({ promiseResult: error })
+            else
+                promise.update({ promiseResult: error }, true)
+            end if
             promise.promiseState = promises.internal.PromiseState.rejected
         end if
         return promise
