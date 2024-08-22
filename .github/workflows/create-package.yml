@@ -32,7 +32,7 @@ jobs:
 
           echo "BUILD_VERSION=$BUILD_VERSION" >> $GITHUB_ENV
           echo "ARTIFACT_URL=$ARTIFACT_URL" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
       - run: npm ci
       - run: npm version "$BUILD_VERSION" --no-git-tag-version
