@@ -4,3 +4,4 @@ dist
 *.zip
 *.tgz
 .env
+.DS_Store

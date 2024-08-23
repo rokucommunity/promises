@@ -7,5 +7,7 @@
     "stagingDir": "./dist",
     "emitDefinitions": true,
     "sourceMap": true,
-    "autoImportComponentScript": true
+    "autoImportComponentScript": true,
+    "retainStagingDir": true,
+    "createPackage": false
 }
