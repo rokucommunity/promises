@@ -2,6 +2,7 @@
 	"stagingDir": "./dist",
 	"extends": "./bsconfig.json",
 	"retainStagingDir": true,
+	"createPackage": false,
 	"files": [
 		"**/*"
 	],

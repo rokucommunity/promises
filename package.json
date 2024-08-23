@@ -6,7 +6,7 @@
   "description": "A Promise-like implementation for BrightScript/Roku",
   "scripts": {
     "preversion": "npm run build && npm run prepare-releases",
-    "build": "bsc --create-package=false",
+    "build": "bsc",
     "build-tests": "bsc --project bsconfig.tests.json",
     "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts"

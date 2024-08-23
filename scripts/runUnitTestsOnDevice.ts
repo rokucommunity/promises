@@ -217,6 +217,7 @@ export class UnitTestRunner {
 			let result = await rokuDeploy.deploy({
 				host: this.host,
 				password: this.devicePassword,
+				stagingDir: `${process.cwd()}/out/.roku-deploy-staging`,
 				rootDir: `${process.cwd()}/dist/`,
 				files: [
 					'**/*'

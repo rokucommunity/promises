@@ -55,7 +55,7 @@ namespace tests
 				promises.resolve(3)
 			])).then(sub(_)
 				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1,2,3]), msg)
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1, 2, 3]), msg)
 			end sub).catch(sub(_)
 				m.testSuite.fail("should not get here")
 			end sub).finally(sub()
@@ -124,6 +124,232 @@ namespace tests
 				timespan: createObject("roTimespan")
 				timerDurationInMillis: timerDurationInMillis
 			})
+		end function
+
+		@async
+		@it("resolved invalid")
+		function _()
+			promise = promises.resolve(invalid)
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, invalid)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject invalid")
+		function _()
+			promise = promises.reject(invalid)
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, invalid)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved integer")
+		function _()
+			promise = promises.resolve(1)
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, 1)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject integer")
+		function _()
+			promise = promises.reject(1)
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, 1)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved float")
+		function _()
+			promise = promises.resolve(1.1)
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, 1.1)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject float")
+		function _()
+			promise = promises.reject(1.1)
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, 1.1)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved boolean")
+		function _()
+			promise = promises.resolve(true)
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, true)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject boolean")
+		function _()
+			promise = promises.reject(true)
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, true)
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved string")
+		function _()
+			promise = promises.resolve("my string")
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, "my string")
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject string")
+		function _()
+			promise = promises.reject("my string")
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, "my string")
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved array")
+		function _()
+			promise = promises.resolve([1,2,3])
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, [1,2,3])
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject array")
+		function _()
+			promise = promises.reject([1,2,3])
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, [1,2,3])
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved AA")
+		function _()
+			promise = promises.resolve({
+				key: "value"
+			})
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, {
+					key: "value"
+				})
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject AA")
+		function _()
+			promise = promises.reject({
+				key: "value"
+			})
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, {
+					key: "value"
+				})
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved AA with subtype")
+		function _()
+			promise = promises.resolve({
+				subType: "Node"
+			})
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, {
+					subType: "Node"
+				})
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject AA with subtype")
+		function _()
+			promise = promises.reject({
+				subType: "Node"
+			})
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, {
+					subType: "Node"
+				})
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved AA with children array")
+		function _()
+			promise = promises.resolve({
+				children: [{ subType: "Node" }]
+			})
+			promises.onThen(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, {
+					children: [{ subType: "Node" }]
+				})
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("reject AA with children array")
+		function _()
+			promise = promises.reject({
+				children: [{ subType: "Node" }]
+			})
+			promises.onCatch(promise, sub(result as dynamic)
+				m.testSuite.assertEqual(result, {
+					children: [{ subType: "Node" }]
+				})
+				m.testSuite.done()
+			end sub)
+		end function
+
+		@async
+		@it("resolved SgNode")
+		function _()
+			testNode = createNode("Node")
+			promise = promises.resolve(testNode)
+			promises.onThen(promise, sub(result as dynamic, context as dynamic)
+				m.testSuite.assertTrue(context.isSameNode(result))
+				m.testSuite.done()
+			end sub, testNode)
+		end function
+
+		@async
+		@it("reject SgNode")
+		function _()
+			testNode = createNode("Node")
+			promise = promises.reject(testNode)
+			promises.onCatch(promise, sub(result as dynamic, context as dynamic)
+				m.testSuite.assertTrue(context.isSameNode(result))
+				m.testSuite.done()
+			end sub, testNode)
 		end function
 
 	end class
