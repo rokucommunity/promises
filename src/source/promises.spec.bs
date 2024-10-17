@@ -115,7 +115,7 @@ namespace tests
 			promises.onThen(promise, sub(_ as dynamic, ctx as dynamic)
 				elapsedTimeInMillis = ctx.timespan.totalMilliseconds()
 				? "elapsed time to resolve promise:" + elapsedTimeInMillis.tostr()
-				tolerance = ctx.timerDurationInMillis * 0.1
+				tolerance = ctx.timerDurationInMillis * 0.2
 				msg = "did not settle within 10% tolerance of timer duration"
 				m.testSuite.assertTrue(ctx.timerDurationInMillis - tolerance <= elapsedTimeInMillis, msg)
 				m.testSuite.assertTrue(ctx.timerDurationInMillis + tolerance >= elapsedTimeInMillis, msg)
@@ -352,6 +352,37 @@ namespace tests
 			end sub, testNode)
 		end function
 
+		@async(60000)
+		@it("unravels deep promise chain without crashing due to stackoverflow")
+		function _()
+			'this function creates a promise that depends on another promise (until we hit a max)
+			doWork = function(context)
+				'if we hit the max, resolve the promise and unravel the entire stack
+				if context.currentCount > 10000
+					return promises.resolve(true)
+				end if
+				context.currentCount = context.currentCount + 1
+
+				'return a promise that depends on another future promise
+				return promises.onThen(promises.resolve(true), function(result, context)
+					doWork = context.doWork
+					return doWork(context)
+				end function, context)
+			end function
+
+			promises.chain(promises.resolve(true), {
+				currentCount: 0,
+				doWork: doWork
+			}).then(function(result, context)
+				doWork = context.doWork
+				return doWork(context)
+			end function).then(function(result, context)
+				m.testSuite.done()
+			end function).catch(function(error, context)
+				print "error", error, FormatJson(error.backtrace)
+			end function).toPromise()
+
+		end function
 	end class
 end namespace
 

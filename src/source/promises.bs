@@ -251,7 +251,13 @@ namespace promises.internal
         if storage = invalid then
             ' unregister any observers on the promise to prevent multiple callbacks
             promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
-            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, promises.internal.notifyListeners)
+            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event)
+                'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
+                promises.internal.delay(sub(context)
+                    promises.internal.notifyListeners(context.event)
+                end sub, { event: event })
+            end sub)
+
             storage = {
                 promise: promise
                 thenListeners: []
