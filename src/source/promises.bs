@@ -488,7 +488,7 @@ namespace promises.internal
                     print "Crash during utils.delay:", e
                 #end if
             end try
-            m[delayId] = invalid
+            m.delete(delayId)
         end sub)
 
         timer.control = "start"
