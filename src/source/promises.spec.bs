@@ -383,6 +383,27 @@ namespace tests
 			end function).toPromise()
 
 		end function
+
+		@async()
+		@only()
+		@it("promises.reject will keep nexttick alive even when its owning node is disposed")
+		function _()
+			'create the node (which creates the promise
+			node = createObject("roSGNode", "TestDispose")
+			'get the promise that the node created
+			promise = node.promise
+
+			'when the promise is rejected, the test passes
+			promises.chain(promise).then(function(result)
+				m.testSuite.done()
+			end function).catch(function(error)
+				m.testSuite.fail(`$should not get here: ${error?.message}`)
+			end function).ToPromise()
+
+			'now dispose of the node and delete its reference from brs
+			node@.dispose()
+			node = invalid
+		end function
 	end class
 end namespace
 
