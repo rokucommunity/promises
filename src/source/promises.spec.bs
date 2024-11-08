@@ -64,6 +64,40 @@ namespace tests
 		end sub
 
 		@async
+		@it("resolving works with non-promise entire all promises")
+		sub _()
+			promises.chain(promises.all([
+				promises.resolve(1)
+				2
+				promises.resolve(3)
+			])).then(sub(_)
+				msg = "resolved promise result should be [1,2,3]"
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1, 2, 3]), msg)
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("resolving works with all non-promise entires all promises")
+		sub _()
+			promises.chain(promises.all([
+				1
+				2
+				3
+			])).then(sub(_)
+				msg = "resolved promise result should be [1,2,3]"
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1, 2, 3]), msg)
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
 		@it("rejecting all promises")
 		sub _()
 			promises.chain(promises.all([
