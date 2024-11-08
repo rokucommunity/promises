@@ -34,13 +34,60 @@ namespace tests
 			m.assertFalse(promises.isComplete(invalid))
 		end sub
 
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.chain()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 		@async
 		@it("promise chain")
 		sub _()
-			promises.chain(promises.resolve(1)).then(sub(_)
-				m.testSuite.assertTrue(_ = 1, _.tostr())
-			end sub).catch(sub(_)
-				m.testSuite.assertFalse(true, _.tostr())
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+			}
+
+			promises.chain(promises.resolve(1), context).then(sub(result, context)
+				context.thenCount++
+				m.testSuite.assertEqual(result, 1)
+			end sub).catch(sub(error, context)
+				context.catchCount++
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(context)
+				context.finallyCount++
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					finallyCount: 1
+				})
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.all()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		@async
+		@it("handled non-array")
+		sub _()
+			promises.chain(promises.all(invalid)).then(sub(result)
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(error)
+				m.testSuite.assetEqual(error.message, "did not supply an array")
+				m.testSuite.assetNotInvalid(error.backtrace)
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handled empty array")
+		sub _()
+			promises.chain(promises.all([])).then(sub(result)
+				m.testSuite.assertEqual(result, [])
+			end sub).catch(sub(error)
+				m.testSuite.fail("should not get here")
 			end sub).finally(sub()
 				m.testSuite.done()
 			end sub)
@@ -217,6 +264,10 @@ namespace tests
 			end sub)
 		end sub
 
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.onThen()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 		@async
 		@it("thenable promise")
 		sub _()
@@ -225,6 +276,10 @@ namespace tests
 				m.testSuite.done()
 			end sub)
 		end sub
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.onCatch()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 		@async
 		@it("catchable promise")
@@ -235,6 +290,10 @@ namespace tests
 			end sub)
 		end sub
 
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.onFinally()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 		@async
 		@it("finalable promise")
 		sub _()
@@ -243,6 +302,10 @@ namespace tests
 				m.testSuite.done()
 			end sub)
 		end sub
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("does not resolve to soon or too late")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 		@async
 		@it("timer promise")
@@ -262,6 +325,10 @@ namespace tests
 				timerDurationInMillis: timerDurationInMillis
 			})
 		end function
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.resolve()/promises.reject()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 		@async
 		@it("resolved invalid")
@@ -366,9 +433,9 @@ namespace tests
 		@async
 		@it("resolved array")
 		function _()
-			promise = promises.resolve([1,2,3])
+			promise = promises.resolve([1, 2, 3])
 			promises.onThen(promise, sub(result as dynamic)
-				m.testSuite.assertEqual(result, [1,2,3])
+				m.testSuite.assertEqual(result, [1, 2, 3])
 				m.testSuite.done()
 			end sub)
 		end function
@@ -376,9 +443,9 @@ namespace tests
 		@async
 		@it("reject array")
 		function _()
-			promise = promises.reject([1,2,3])
+			promise = promises.reject([1, 2, 3])
 			promises.onCatch(promise, sub(result as dynamic)
-				m.testSuite.assertEqual(result, [1,2,3])
+				m.testSuite.assertEqual(result, [1, 2, 3])
 				m.testSuite.done()
 			end sub)
 		end function
