@@ -7,6 +7,9 @@
             "request": "launch",
             "rootDir": "${workspaceFolder}/dist",
             "preLaunchTask": "build-tests",
+            "files": [
+                "**/*"
+            ],
             "enableDebuggerAutoRecovery": true,
             "stopDebuggerOnAppExit": true,
             "enableVariablesPanel": false,
