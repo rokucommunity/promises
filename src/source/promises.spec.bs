@@ -115,6 +115,109 @@ namespace tests
 		end sub
 
 		@async
+		@it("resolving all promises in allSettled")
+		sub _()
+			promises.chain(promises.allSettled([
+				promises.resolve(1)
+				promises.resolve(2)
+				promises.resolve(3)
+			])).then(sub(_)
+				msg = "resolved promise result should be [1,2,3]"
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
+					{ status: promises.PromiseState.resolved, value: 1 },
+					{ status: promises.PromiseState.resolved, value: 2 },
+					{ status: promises.PromiseState.resolved, value: 3 }
+				]), msg)
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("resolving works with non-promise entire in allSettled")
+		sub _()
+			promises.chain(promises.allSettled([
+				promises.resolve(1)
+				2
+				promises.resolve(3)
+			])).then(sub(_)
+				msg = "resolved promise result should be [1,2,3]"
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
+					{ status: promises.PromiseState.resolved, value: 1 },
+					{ status: promises.PromiseState.resolved, value: 2 },
+					{ status: promises.PromiseState.resolved, value: 3 }
+				]), msg)
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("resolving works with all non-promise entire in allSettled")
+		sub _()
+			promises.chain(promises.allSettled([
+				1
+				2
+				3
+			])).then(sub(_)
+				msg = "resolved promise result should be [1,2,3]"
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
+					{ status: promises.PromiseState.resolved, value: 1 },
+					{ status: promises.PromiseState.resolved, value: 2 },
+					{ status: promises.PromiseState.resolved, value: 3 }
+				]), msg)
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("rejecting a promise in allSettled")
+		sub _()
+			promises.chain(promises.allSettled([
+				promises.resolve(1)
+				promises.reject(2)
+				promises.resolve(3)
+			])).then(sub(_)
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
+					{ status: promises.PromiseState.resolved, value: 1 },
+					{ status: promises.PromiseState.rejected, reason: 2 },
+					{ status: promises.PromiseState.resolved, value: 3 }
+				]))
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("rejecting all promises in allSettled")
+		sub _()
+			promises.chain(promises.allSettled([
+				promises.reject(1)
+				promises.reject(2)
+				promises.reject(3)
+			])).then(sub(_)
+				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
+					{ status: promises.PromiseState.rejected, reason: 1 },
+					{ status: promises.PromiseState.rejected, reason: 2 },
+					{ status: promises.PromiseState.rejected, reason: 3 }
+				]))
+			end sub).catch(sub(_)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
 		@it("thenable promise")
 		sub _()
 			promises.onThen(promises.resolve("thenable"), sub(_)
