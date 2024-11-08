@@ -38,7 +38,9 @@ namespace promises
         return promises.internal.on("finally", promise, callback, context)
     end function
 
-    ' Allows multiple promise operations to be resolved as a single promise.
+    ' The Promises.all() method takes an array of promises as input and returns a single Promise.
+    ' This returned promise fulfills when all of the input's promises fulfill (including when an empty iterable is passed), with an array of the fulfillment values.
+    ' It rejects when any of the input's promises rejects, with this first rejection reason.
     function all(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -120,7 +122,9 @@ namespace promises
         return deferred
     end function
 
-    ' Allows multiple promise operations to be resolved as a single promise.
+    ' The Promises.allSettled() method takes an array of promises as input and returns a single Promise.
+    ' This returned promise fulfills when all of the input's promises settle (including when an empty iterable is passed),
+    ' with an array of objects that describe the outcome of each promise.
     function allSettled(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -207,7 +211,9 @@ namespace promises
         return deferred
     end function
 
-    ' Allows multiple promise operations to be resolved as a single promise.
+    ' The Promise.any() static method takes an array of promises as input and returns a single Promise.
+    ' This returned promise fulfills when any of the input's promises fulfills, with this first fulfillment value.
+    ' It rejects when all of the input's promises reject (including when an empty array is passed), with an AggregateError containing an array of rejection reasons.
     function any(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -274,23 +280,19 @@ namespace promises
                 end if
             end for
         else
-            if type(promiseArray) = "roArray" then
-                ' Resolve when the array is empty
-                promises.resolve(promiseArray, deferred)
-            else
-                ' Reject if the supplied list is not an array
-                try
-                    throw "Did not supply an array"
-                catch e
-                    promises.reject(e, deferred)
-                end try
-            end if
+            ' We can't resolve with a promise if there are no promises to resolve
+            try
+                throw { message: "All promises were rejected", errors: [] }
+            catch e
+                promises.reject(e, deferred)
+            end try
         end if
 
         return deferred
     end function
 
-    ' Allows multiple promise operations to be resolved as a single promise.
+    ' The Promise.race() static method takes an iterable of promises as input and returns a single Promise.
+    ' This returned promise settles with the eventual state of the first promise that settles.
     function race(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -346,17 +348,12 @@ namespace promises
                 end if
             end for
         else
-            if type(promiseArray) = "roArray" then
-                ' Resolve when the array is empty
-                promises.resolve(promiseArray, deferred)
-            else
-                ' Reject if the supplied list is not an array
-                try
-                    throw "Did not supply an array"
-                catch e
-                    promises.reject(e, deferred)
-                end try
-            end if
+            ' We can't resolve with a promise if there are no promises to resolve
+            try
+                throw { message: "All promises were rejected", errors: [] }
+            catch e
+                promises.reject(e, deferred)
+            end try
         end if
 
         return deferred
@@ -476,9 +473,20 @@ namespace promises
         resolved = "resolved"
         rejected = "rejected"
     end enum
+
+    interface AggregateError
+        message as string
+        ' array of dynamic rejected values
+        errors as dynamic
+    end interface
 end namespace
 
 namespace promises.internal
+    enum PromiseState
+        pending = "pending"
+        resolved = "resolved"
+        rejected = "rejected"
+    end enum
 
     enum PromiseField
         promiseState = "promiseState"
