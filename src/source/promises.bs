@@ -128,7 +128,7 @@ namespace promises
             else
                 promise.update({ promiseResult: result }, true)
             end if
-            promise.promiseState = promises.internal.PromiseState.resolved
+            promise.promiseState = promises.PromiseState.resolved
         end if
         return promise
     end function
@@ -145,13 +145,13 @@ namespace promises
             else
                 promise.update({ promiseResult: error }, true)
             end if
-            promise.promiseState = promises.internal.PromiseState.rejected
+            promise.promiseState = promises.PromiseState.rejected
         end if
         return promise
     end function
 
     function isComplete(promise as object) as boolean
-        return promises.isPromise(promise) and (promise.promiseState = promises.internal.PromiseState.resolved or promise.promiseState = promises.internal.PromiseState.rejected)
+        return promises.isPromise(promise) and (promise.promiseState = promises.PromiseState.resolved or promise.promiseState = promises.PromiseState.rejected)
     end function
 
     ' Determines if the given item is a promise.
@@ -224,14 +224,15 @@ namespace promises
         if promises.isPromise(value) then return value
         return promises.resolve(value)
     end function
-end namespace
 
-namespace promises.internal
     enum PromiseState
         pending = "pending"
         resolved = "resolved"
         rejected = "rejected"
     end enum
+end namespace
+
+namespace promises.internal
 
     enum PromiseField
         promiseState = "promiseState"
@@ -285,7 +286,7 @@ namespace promises.internal
 
             promiseState = promise.promiseState
             'trigger a change if the promise is already resolved
-            if promiseState = promises.internal.PromiseState.resolved or promiseState = promises.internal.PromiseState.rejected then
+            if promiseState = promises.PromiseState.resolved or promiseState = promises.PromiseState.rejected then
                 promises.internal.delay(sub (details as object)
                     details.promise.promiseState = details.promiseState
                 end sub, { promise: promise, promiseState: promiseState })
@@ -328,12 +329,12 @@ namespace promises.internal
 
             'handle .then() listeners
             for each listener in promiseStorage.thenListeners
-                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.internal.PromiseState.resolved, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.PromiseState.resolved, promiseResult)
             end for
 
             'handle .catch() listeners
             for each listener in promiseStorage.catchListeners
-                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.internal.PromiseState.rejected, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.PromiseState.rejected, promiseResult)
             end for
 
             'handle .finally() listeners
@@ -416,7 +417,7 @@ namespace promises.internal
             end try
         else
             'use the current promise value to pass to the next promise (this is a .catch handler)
-            if originalPromise.promiseState = promises.internal.PromiseState.rejected then
+            if originalPromise.promiseState = promises.PromiseState.rejected then
                 callbackResult = promises.reject(promiseValue)
             else
                 callbackResult = promiseValue
@@ -431,13 +432,13 @@ namespace promises.internal
                 promiseState = context.callbackPromise.promiseState
                 promiseResult = context.callbackPromise.promiseResult
 
-                if promiseState = promises.internal.PromiseState.resolved then
+                if promiseState = promises.PromiseState.resolved then
                     'the callback promise is complete. resolve the newPromise
                     promises.resolve(promiseResult, context.newPromise)
                     return
                 end if
 
-                if promiseState = promises.internal.PromiseState.rejected then
+                if promiseState = promises.PromiseState.rejected then
                     promises.reject(promiseResult, context.newPromise)
                     return
                 end if
