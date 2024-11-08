@@ -161,6 +161,36 @@ namespace tests
 			end sub)
 		end sub
 
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.allSettled()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		@async
+		@it("handled non-array")
+		sub _()
+			promises.chain(promises.allSettled(invalid)).then(sub(result)
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(error)
+				m.testSuite.assetEqual(error.message, "did not supply an array")
+				m.testSuite.assetNotInvalid(error.backtrace)
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handled empty array")
+		sub _()
+			promises.chain(promises.allSettled([])).then(sub(result)
+				m.testSuite.assertEqual(result, [])
+			end sub).catch(sub(error)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
 		@async
 		@it("resolving all promises in allSettled")
 		sub _()
@@ -263,6 +293,173 @@ namespace tests
 				m.testSuite.done()
 			end sub)
 		end sub
+
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.any()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		@async
+		@it("handled non-array")
+		sub _()
+			promises.chain(promises.any(invalid)).then(sub(result)
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(error)
+				m.testSuite.assetEqual(error.message, "did not supply an array")
+				m.testSuite.assetNotInvalid(error.backtrace)
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handled empty array")
+		sub _()
+			promises.chain(promises.any([])).then(sub(result)
+				m.testSuite.assertEqual(result, [])
+			end sub).catch(sub(error)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub()
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handled a promise that resolves")
+		sub _()
+			promiseArray = [
+				promises.create()
+				promises.create()
+				promises.create()
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.assertEqual(result, 2)
+			end sub).catch(sub(_, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(promiseArray)
+				promises.resolve(invalid, promiseArray[0])
+				promises.resolve(invalid, promiseArray[2])
+
+				m.testSuite.done()
+			end sub)
+
+			promises.resolve(2, promiseArray[1])
+		end sub
+
+		@async
+		@it("handles a pre-resolved promise")
+		sub _()
+			promiseArray = [
+				promises.create()
+				promises.resolve(2)
+				promises.create()
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.assertEqual(result, 2)
+			end sub).catch(sub(_, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(promiseArray)
+				promises.resolve(invalid, promiseArray[0])
+				promises.resolve(invalid, promiseArray[2])
+
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles a non-promise value amongst pending promises")
+		sub _()
+			promiseArray = [
+				promises.create()
+				2
+				promises.create()
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.assertEqual(result, 2)
+			end sub).catch(sub(_, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(promiseArray)
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles a non-promise value amongst rejected promises")
+		sub _()
+			promiseArray = [
+				promises.reject(1)
+				2
+				promises.reject(2)
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.assertEqual(result, 2)
+			end sub).catch(sub(_, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(promiseArray)
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles a first pre-resolved promise")
+		sub _()
+			promiseArray = [
+				promises.resolve(1)
+				promises.resolve(2)
+				promises.resolve(2)
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.assertEqual(result, 1)
+			end sub).catch(sub(_, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(promiseArray)
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles first pre-resolved promise along with a non-promise value")
+		sub _()
+			promiseArray = [
+				promises.resolve(1)
+				2
+				promises.resolve(2)
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.assertEqual(result, 1)
+			end sub).catch(sub(_, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).finally(sub(promiseArray)
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles all promises being pre-rejected")
+		sub _()
+			promiseArray = [
+				promises.reject("1")
+				promises.reject("2")
+				promises.reject("3")
+			]
+
+			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(error, promiseArray)
+				m.testSuite.assertEqual(error.message, "All promises were rejected")
+				m.testSuite.assertEqual(error.errors, ["1", "2", "3"])
+				m.testSuite.assertNotInvalid(error.backtrace)
+			end sub).finally(sub(promiseArray)
+				m.testSuite.done()
+			end sub)
+		end sub
+
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.onThen()")

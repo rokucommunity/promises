@@ -109,7 +109,11 @@ namespace promises
                 promises.resolve(promiseArray, deferred)
             else
                 ' Reject if the supplied list is not an array
-                promises.reject("Promises.all: did not supply an array")
+                try
+                    throw "did not supply an array"
+                catch e
+                    promises.reject(e, deferred)
+                end try
             end if
         end if
 
@@ -192,7 +196,94 @@ namespace promises
                 promises.resolve(promiseArray, deferred)
             else
                 ' Reject if the supplied list is not an array
-                promises.reject("Promises.allSettled: did not supply an array")
+                try
+                    throw "did not supply an array"
+                catch e
+                    promises.reject(e, deferred)
+                end try
+            end if
+        end if
+
+        return deferred
+    end function
+
+    ' Allows multiple promise operations to be resolved as a single promise.
+    function any(promiseArray as dynamic) as dynamic
+        ' Create a deferred to be resolved later
+        deferred = promises.create()
+
+        if type(promiseArray) = "roArray" and not promiseArray.isEmpty() then
+            ' Track the state and results of all the promises
+            state = {
+                deferred: deferred
+                errors: []
+                resolvedCount: 0
+                total: promiseArray.count()
+                done: false
+            }
+
+            for i = 0 to promiseArray.count() - 1
+                promise = promiseArray[i]
+                if promises.isPromise(promise) then
+
+                    if promise.promiseState = promises.PromiseState.resolved then
+                        ' Do not process any promises that come in after the first resolved one
+                        if not state.done then
+                            state.done = true
+                            promises.resolve(promise.promiseResult, state.deferred)
+                        end if
+                    else
+                        ' Watch for both resolved or rejected promises
+                        promises.onThen(promise, sub(result as dynamic, state as dynamic)
+                            ' Do not process any promises that come in after the first resolved one
+                            if not state.done then
+                                state.done = true
+                                promises.resolve(result, state.deferred)
+                            end if
+                        end sub, state)
+
+                        promises.onCatch(promise, sub(error as dynamic, context as dynamic)
+                            ' Do not process any promises that come in late
+                            ' This can happen if any of the other promises reject
+                            if not context.state.done then
+                                ' Always assign the result to the origin index so results are in the same
+                                ' order as the supplied promiseArray
+                                context.state.errors[context.index] = error
+                                context.state.resolvedCount++
+
+                                if context.state.resolvedCount = context.state.total then
+                                    ' All the promises are resolved.
+                                    ' Resolve the deferred and make the state as complete
+                                    context.state.done = true
+                                    try
+                                        throw { message: "All promises were rejected", errors: context.state.errors }
+                                    catch e
+                                        promises.reject(e, context.state.deferred)
+                                    end try
+                                end if
+                            end if
+                        end sub, { state: state, index: i })
+                    end if
+                else
+                    ' The value in the promise array is not a promise.
+                    ' Immediately set the result.
+                    if not state.done then
+                        state.done = true
+                        promises.resolve(promise, state.deferred)
+                    end if
+                end if
+            end for
+        else
+            if type(promiseArray) = "roArray" then
+                ' Resolve when the array is empty
+                promises.resolve(promiseArray, deferred)
+            else
+                ' Reject if the supplied list is not an array
+                try
+                    throw "did not supply an array"
+                catch e
+                    promises.reject(e, deferred)
+                end try
             end if
         end if
 
