@@ -110,7 +110,7 @@ namespace promises
             else
                 ' Reject if the supplied list is not an array
                 try
-                    throw "did not supply an array"
+                    throw "Did not supply an array"
                 catch e
                     promises.reject(e, deferred)
                 end try
@@ -197,7 +197,7 @@ namespace promises
             else
                 ' Reject if the supplied list is not an array
                 try
-                    throw "did not supply an array"
+                    throw "Did not supply an array"
                 catch e
                     promises.reject(e, deferred)
                 end try
@@ -280,7 +280,7 @@ namespace promises
             else
                 ' Reject if the supplied list is not an array
                 try
-                    throw "did not supply an array"
+                    throw "Did not supply an array"
                 catch e
                     promises.reject(e, deferred)
                 end try
@@ -352,7 +352,7 @@ namespace promises
             else
                 ' Reject if the supplied list is not an array
                 try
-                    throw "did not supply an array"
+                    throw "Did not supply an array"
                 catch e
                     promises.reject(e, deferred)
                 end try
