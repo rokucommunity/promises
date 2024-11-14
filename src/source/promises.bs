@@ -38,8 +38,8 @@ namespace promises
         return promises.internal.on("finally", promise, callback, context)
     end function
 
-    ' The Promises.all() method takes an array of promises as input and returns a single Promise.
-    ' This returned promise fulfills when all of the input's promises fulfill (including when an empty iterable is passed), with an array of the fulfillment values.
+    ' Takes an array of promises as input and returns a single Promise.
+    ' This returned promise fulfills when all of the input's promises fulfill (including when an empty array is passed), with an array of the fulfillment values.
     ' It rejects when any of the input's promises rejects, with this first rejection reason.
     function all(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
@@ -122,8 +122,8 @@ namespace promises
         return deferred
     end function
 
-    ' The Promises.allSettled() method takes an array of promises as input and returns a single Promise.
-    ' This returned promise fulfills when all of the input's promises settle (including when an empty iterable is passed),
+    ' Takes an array of promises as input and returns a single Promise.
+    ' This returned promise fulfills when all of the input's promises settle (including when an empty array is passed),
     ' with an array of objects that describe the outcome of each promise.
     function allSettled(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
@@ -211,7 +211,7 @@ namespace promises
         return deferred
     end function
 
-    ' The Promise.any() static method takes an array of promises as input and returns a single Promise.
+    ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when any of the input's promises fulfills, with this first fulfillment value.
     ' It rejects when all of the input's promises reject (including when an empty array is passed), with an AggregateError containing an array of rejection reasons.
     function any(promiseArray as dynamic) as dynamic
@@ -291,7 +291,7 @@ namespace promises
         return deferred
     end function
 
-    ' The Promise.race() static method takes an iterable of promises as input and returns a single Promise.
+    ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise settles with the eventual state of the first promise that settles.
     function race(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
