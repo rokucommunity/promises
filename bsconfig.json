@@ -1,7 +1,7 @@
 {
     "files": [
         "**/*",
-        "!**/*.spec.bs"
+        "!**/*.spec.(bs|xml)"
     ],
     "rootDir": "./src",
     "stagingDir": "./dist",

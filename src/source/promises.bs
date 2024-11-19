@@ -729,6 +729,8 @@ namespace promises.internal
             timer: timer
             callback: callback
             context: context
+            'store a reference to `top`, which ensures our owning node won't be disposed until after we're finished running our callback
+            top: getGlobalAA().top
         }
 
         promises.internal.observeFieldScoped(timer, "fire", sub (event as object)
