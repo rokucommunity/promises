@@ -1,0 +1,13 @@
+import "pkg:/source/promises.bs"
+
+function init()
+    m.top.promise = promises.create()
+end function
+
+function dispose(_ = invalid)
+    'start a promise chain which waits for a promise, THEN resolves our outer promise.
+    promises.chain(promises.resolve("Auto-resolved promise to start the chain")).then(function(result)
+        'reject the promise. (this happens nexttick, which is the whole purpose of this test)
+        promises.resolve("Success!", m.top.promise)
+    end function).toPromise()
+end function

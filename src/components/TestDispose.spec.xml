@@ -1,0 +1,6 @@
+<component name="TestDispose" extends="group">
+    <interface>
+        <field id="promise" type="node" />
+        <function name="dispose" />
+    </interface>
+</component>
