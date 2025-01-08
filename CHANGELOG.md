@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.5.0](https://github.com/rokucommunity/promises/compare/v0.4.0...v0.5.0) - 2024-11-18
+### Added
+ - Feature/allSettled(), any(), race(). ([#25](https://github.com/rokucommunity/promises/pull/25))
+### Changed
+ - all internal promise rejections now reject with an exception object instead of a string ([#25](https://github.com/rokucommunity/promises/pull/25))
+
+
+
 ## [0.4.0](https://github.com/rokucommunity/promises/compare/v0.3.0...v0.4.0) - 2024-10-18
 ### Fixed
  - Prevent stackoverflow ([#23](https://github.com/rokucommunity/promises/pull/23))
