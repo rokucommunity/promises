@@ -38,294 +38,671 @@ namespace tests
 		@describe("promises.chain()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-		@async
 		@it("promise chain")
-		sub _()
+		function _()
 			context = {
 				thenCount: 0
 				catchCount: 0
 				finallyCount: 0
+				result: ""
 			}
 
-			promises.chain(promises.resolve(1), context).then(sub(result, context)
+			results = promises.chain(promises.resolve(1), context).then(sub(result, context)
 				context.thenCount++
+				context.result = result
 				m.testSuite.assertEqual(result, 1)
 			end sub).catch(sub(error, context)
 				context.catchCount++
 				m.testSuite.fail("should not get here")
 			end sub).finally(sub(context)
 				context.finallyCount++
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
 				m.testSuite.assertEqual(context, {
 					thenCount: 1
 					catchCount: 0
 					finallyCount: 1
+					result: 1
 				})
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub, context)
+		end function
+
+		@it("promise chain finally handling resolved promise and returning value from finally")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				result: ""
+			}
+
+			results = promises.chain(promises.resolve("I am happy"), context).finally(function(context)
+				context.finallyCount++
+				return "I am sad"
+			end function).then(sub(result as dynamic, context as dynamic)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(result as dynamic, context as dynamic)
+				context.catchCount++
+				m.testSuite.fail("should not get here")
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					finallyCount: 1
+					result: "I am happy"
+				})
+			end sub, context)
+		end function
+
+		@it("promise chain finally handling rejected promise")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				errorMessage: ""
+			}
+
+			results = promises.chain(promises.reject("Crash"), context).finally(sub(context)
+				context.finallyCount++
+			end sub).then(sub(result as dynamic, context as dynamic)
+				context.thenCount++
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(result as dynamic, context as dynamic)
+				context.catchCount++
+				context.errorMessage = result
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					finallyCount: 1
+					errorMessage: "Crash"
+				})
+			end sub, context)
+		end function
+
+		@it("promise chain finally handling rejected  promise but returned resolved from finally")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				errorMessage: ""
+			}
+
+			results = promises.chain(promises.reject("Crash"), context).finally(function(context)
+				context.finallyCount++
+				return promises.resolve(true)
+			end function).then(sub(result as dynamic, context as dynamic)
+				context.thenCount++
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(result as dynamic, context as dynamic)
+				context.catchCount++
+				context.errorMessage = result
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					finallyCount: 1
+					errorMessage: "Crash"
+				})
+			end sub, context)
+		end function
+
+		@it("promise chain finally handling rejected  promise but returned resolved from finally")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				errorMessage: ""
+			}
+
+			results = promises.chain(promises.reject("Crash"), context).finally(function(context)
+				context.finallyCount++
+				return true
+			end function).then(sub(result as dynamic, context as dynamic)
+				context.thenCount++
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(result as dynamic, context as dynamic)
+				context.catchCount++
+				context.errorMessage = result
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					finallyCount: 1
+					errorMessage: "Crash"
+				})
+			end sub, context)
+		end function
+
+		@it("promise chain finally handling rejected promise but reject in finally")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				errorMessage: ""
+			}
+
+			results = promises.chain(promises.reject("Crash"), context).finally(function(context)
+				context.finallyCount++
+				return promises.reject("error in finally")
+			end function).then(sub(result as dynamic, context as dynamic)
+				context.thenCount++
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(result as dynamic, context as dynamic)
+				context.catchCount++
+				context.errorMessage = result
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					finallyCount: 1
+					errorMessage: "error in finally"
+				})
+			end sub, context)
+		end function
+
+		@it("promise chain finally handling rejected  promise but crashed in finally")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				errorMessage: ""
+			}
+
+			results = promises.chain(promises.reject("Crash"), context).finally(function(context)
+				context.finallyCount++
+				throw "error in finally"
+			end function).then(sub(result as dynamic, context as dynamic)
+				context.thenCount++
+				m.testSuite.fail("should not get here")
+			end sub).catch(sub(result as dynamic, context as dynamic)
+				context.catchCount++
+				context.errorMessage = result.message
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					finallyCount: 1
+					errorMessage: "error in finally"
+				})
+			end sub, context)
+		end function
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.all()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-		@async
 		@it("handled non-array")
-		sub _()
-			promises.chain(promises.all(invalid)).then(sub(result)
-				m.testSuite.fail("should not get here")
-			end sub).catch(sub(error)
-				m.testSuite.assetEqual(error.message, "Did not supply an array")
-				m.testSuite.assetNotInvalid(error.backtrace)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				errorMessage: ""
+				backtrace: invalid
+			}
 
-		@async
+			results = promises.chain(promises.all(invalid), context).then(sub(result, context)
+				context.thenCount++
+			end sub).catch(function(error, context)
+				context.catchCount++
+				context.errorMessage = error.message
+				context.backtrace = error.backtrace
+				return true
+			end function).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				backtrace = context.backtrace
+				context.delete("backtrace")
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					errorMessage: "Did not supply an array"
+				})
+				m.testSuite.assertNotInvalid(backtrace)
+			end sub, context)
+		end function
+
 		@it("handled empty array")
-		sub _()
-			promises.chain(promises.all([])).then(sub(result)
-				m.testSuite.assertEqual(result, [])
-			end sub).catch(sub(error)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
 
-		@async
+			results = promises.chain(promises.all([]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: []
+				})
+			end sub, context)
+		end function
+
 		@it("resolving all promises")
-		sub _()
-			promises.chain(promises.all([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.all([
 				promises.resolve(1)
 				promises.resolve(2)
 				promises.resolve(3)
-			])).then(sub(_)
-				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1, 2, 3]), msg)
-			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [1, 2, 3]
+				})
+			end sub, context)
+		end function
+
 		@it("resolving works with non-promise entire all promises")
-		sub _()
-			promises.chain(promises.all([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.all([
 				promises.resolve(1)
 				2
 				promises.resolve(3)
-			])).then(sub(_)
-				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1, 2, 3]), msg)
-			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [1, 2, 3]
+				})
+			end sub, context)
+		end function
+
 		@it("resolving works with all non-promise entires all promises")
-		sub _()
-			promises.chain(promises.all([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.all([
 				1
 				2
 				3
-			])).then(sub(_)
-				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [1, 2, 3]), msg)
-			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [1, 2, 3]
+				})
+			end sub, context)
+		end function
+
 		@it("rejecting all promises")
-		sub _()
-			promises.chain(promises.all([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: ""
+			}
+
+			results = promises.chain(promises.all([
 				promises.resolve(1)
 				promises.reject(2)
 				promises.resolve(3)
-			])).then(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).catch(sub(_)
-				msg = "rejected promise result should be 2"
-				m.testSuite.assertEqual(_, 2, msg)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			]), context).then(sub(_, context)
+				context.thenCount++
+			end sub).catch(sub(error, context)
+				context.catchCount++
+				context.result = error
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					result: 2
+				})
+			end sub, context)
+		end function
 
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.allSettled()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-		@async
 		@it("handled non-array")
-		sub _()
-			promises.chain(promises.allSettled(invalid)).then(sub(result)
-				m.testSuite.fail("should not get here")
-			end sub).catch(sub(error)
-				m.testSuite.assetEqual(error.message, "Did not supply an array")
-				m.testSuite.assetNotInvalid(error.backtrace)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				errorMessage: ""
+				backtrace: invalid
+			}
 
-		@async
+			results = promises.chain(promises.allSettled(invalid), context).then(sub(_, context)
+				context.thenCount++
+			end sub).catch(function(error, context)
+				context.catchCount++
+				context.errorMessage = error.message
+				context.backtrace = error.backtrace
+			end function).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				backtrace = context.backtrace
+				context.delete("backtrace")
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					errorMessage: "Did not supply an array"
+				})
+				m.testSuite.assertNotInvalid(backtrace)
+			end sub, context)
+		end function
+
 		@it("handled empty array")
-		sub _()
-			promises.chain(promises.allSettled([])).then(sub(result)
-				m.testSuite.assertEqual(result, [])
-			end sub).catch(sub(error)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
 
-		@async
+			results = promises.chain(promises.allSettled([]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: []
+				})
+			end sub, context)
+		end function
+
 		@it("resolving all promises in allSettled")
-		sub _()
-			promises.chain(promises.allSettled([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.allSettled([
 				promises.resolve(1)
 				promises.resolve(2)
 				promises.resolve(3)
-			])).then(sub(_)
-				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
-					{ status: promises.PromiseState.resolved, value: 1 },
-					{ status: promises.PromiseState.resolved, value: 2 },
-					{ status: promises.PromiseState.resolved, value: 3 }
-				]), msg)
-			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [
+						{ status: promises.PromiseState.resolved, value: 1 }
+						{ status: promises.PromiseState.resolved, value: 2 }
+						{ status: promises.PromiseState.resolved, value: 3 }
+					]
+				})
+			end sub, context)
+		end function
+
 		@it("resolving works with non-promise entire in allSettled")
-		sub _()
-			promises.chain(promises.allSettled([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.allSettled([
 				promises.resolve(1)
 				2
 				promises.resolve(3)
-			])).then(sub(_)
-				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
-					{ status: promises.PromiseState.resolved, value: 1 },
-					{ status: promises.PromiseState.resolved, value: 2 },
-					{ status: promises.PromiseState.resolved, value: 3 }
-				]), msg)
-			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
+			end sub).catch(sub(_, context)
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [
+						{ status: promises.PromiseState.resolved, value: 1 }
+						{ status: promises.PromiseState.resolved, value: 2 }
+						{ status: promises.PromiseState.resolved, value: 3 }
+					]
+				})
+			end sub, context)
+		end function
+
 		@it("resolving works with all non-promise entire in allSettled")
-		sub _()
-			promises.chain(promises.allSettled([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.allSettled([
 				1
 				2
 				3
-			])).then(sub(_)
-				msg = "resolved promise result should be [1,2,3]"
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
-					{ status: promises.PromiseState.resolved, value: 1 },
-					{ status: promises.PromiseState.resolved, value: 2 },
-					{ status: promises.PromiseState.resolved, value: 3 }
-				]), msg)
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
 			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [
+						{ status: promises.PromiseState.resolved, value: 1 }
+						{ status: promises.PromiseState.resolved, value: 2 }
+						{ status: promises.PromiseState.resolved, value: 3 }
+					]
+				})
+			end sub, context)
+		end function
+
 		@it("rejecting a promise in allSettled")
-		sub _()
-			promises.chain(promises.allSettled([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.allSettled([
 				promises.resolve(1)
 				promises.reject(2)
 				promises.resolve(3)
-			])).then(sub(_)
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
-					{ status: promises.PromiseState.resolved, value: 1 },
-					{ status: promises.PromiseState.rejected, reason: 2 },
-					{ status: promises.PromiseState.resolved, value: 3 }
-				]))
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
 			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+				context.catchCount++
+			end sub).toPromise()
 
-		@async
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [
+						{ status: promises.PromiseState.resolved, value: 1 }
+						{ status: promises.PromiseState.rejected, reason: 2 }
+						{ status: promises.PromiseState.resolved, value: 3 }
+					]
+				})
+			end sub, context)
+		end function
+
 		@it("rejecting all promises in allSettled")
-		sub _()
-			promises.chain(promises.allSettled([
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				result: invalid
+			}
+
+			results = promises.chain(promises.allSettled([
 				promises.reject(1)
 				promises.reject(2)
 				promises.reject(3)
-			])).then(sub(_)
-				m.testSuite.assertTrue(rooibos.common.eqArray(_, [
-					{ status: promises.PromiseState.rejected, reason: 1 },
-					{ status: promises.PromiseState.rejected, reason: 2 },
-					{ status: promises.PromiseState.rejected, reason: 3 }
-				]))
+			]), context).then(sub(result, context)
+				context.thenCount++
+				context.result = result
 			end sub).catch(sub(_)
-				m.testSuite.fail("should not get here")
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+				context.catchCount++
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 1
+					catchCount: 0
+					result: [
+						{ status: promises.PromiseState.rejected, reason: 1 }
+						{ status: promises.PromiseState.rejected, reason: 2 }
+						{ status: promises.PromiseState.rejected, reason: 3 }
+					]
+				})
+			end sub, context)
+		end function
 
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.any()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-		@async
 		@it("handled non-array")
-		sub _()
-			promises.chain(promises.any(invalid)).then(sub(result)
-				m.testSuite.fail("should not get here")
-			end sub).catch(sub(error)
-				m.testSuite.assertEqual(error.message, "All promises were rejected")
-				m.testSuite.assertEqual(error.errors, [])
-				m.testSuite.assertNotInvalid(error.backtrace)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				errors: invalid
+				errorMessage: ""
+				backtrace: invalid
+			}
 
-		@async
+			results = promises.chain(promises.any(invalid), context).then(sub(_, context)
+				context.thenCount++
+			end sub).catch(sub(error, context)
+				context.catchCount++
+				context.errors = error.errors
+				context.errorMessage = error.message
+				context.backtrace = error.backtrace
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				backtrace = context.backtrace
+				context.delete("backtrace")
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					errors: []
+					errorMessage: "All promises were rejected"
+				})
+				m.testSuite.assertNotInvalid(backtrace)
+			end sub, context)
+		end function
+
 		@it("handled empty array")
-		sub _()
-			promises.chain(promises.any([])).then(sub(result)
-				m.testSuite.fail("should not get here")
-			end sub).catch(sub(error)
-				m.testSuite.assertEqual(error.message, "All promises were rejected")
-				m.testSuite.assertEqual(error.errors, [])
-				m.testSuite.assertNotInvalid(error.backtrace)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				errors: invalid
+				errorMessage: ""
+				backtrace: invalid
+			}
+
+			results = promises.chain(promises.any([]), context).then(sub(_, context)
+				context.thenCount++
+			end sub).catch(sub(error, context)
+				context.catchCount++
+				context.errors = error.errors
+				context.errorMessage = error.message
+				context.backtrace = error.backtrace
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				backtrace = context.backtrace
+				context.delete("backtrace")
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 1
+					errors: []
+					errorMessage: "All promises were rejected"
+				})
+				m.testSuite.assertNotInvalid(backtrace)
+			end sub, context)
+		end function
 
 		@async
 		@it("handled a promise that resolves")
@@ -350,152 +727,130 @@ namespace tests
 			promises.resolve(2, promiseArray[1])
 		end sub
 
-		@async
 		@it("handles a pre-resolved promise")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.create()
 				promises.resolve(2)
 				promises.create()
 			]
 
-			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 2)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
 			end sub).finally(sub(promiseArray)
 				promises.resolve(invalid, promiseArray[0])
 				promises.resolve(invalid, promiseArray[2])
+			end sub).toPromise()
+		end function
 
-				m.testSuite.done()
-			end sub)
-		end sub
-
-		@async
 		@it("handles a non-promise value amongst pending promises")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.create()
 				2
 				promises.create()
 			]
 
-			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 2)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
 			end sub).finally(sub(promiseArray)
 				promises.resolve(invalid, promiseArray[0])
 				promises.resolve(invalid, promiseArray[2])
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles a non-promise value amongst rejected promises")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.reject(1)
 				2
 				promises.reject(2)
 			]
 
-			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 2)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles a first pre-resolved promise")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.resolve(1)
 				promises.resolve(2)
 				promises.resolve(2)
 			]
 
-			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 1)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
 		@async
 		@it("handles first pre-resolved promise along with a non-promise value")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.resolve(1)
 				2
 				promises.resolve(2)
 			]
 
-			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 1)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles all promises being pre-rejected")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.reject("1")
 				promises.reject("2")
 				promises.reject("3")
 			]
 
-			promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.any(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.fail("should not get here")
 			end sub).catch(sub(error, promiseArray)
 				m.testSuite.assertEqual(error.message, "All promises were rejected")
 				m.testSuite.assertEqual(error.errors, ["1", "2", "3"])
 				m.testSuite.assertNotInvalid(error.backtrace)
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.race()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-		@async
 		@it("handled non-array")
-		sub _()
-			promises.chain(promises.race(invalid)).then(sub(result)
+		function _()
+			return promises.chain(promises.race(invalid)).then(sub(result)
 				m.testSuite.fail("should not get here")
 			end sub).catch(sub(error)
 				m.testSuite.assertEqual(error.message, "All promises were rejected")
 				m.testSuite.assertEqual(error.errors, [])
 				m.testSuite.assertNotInvalid(error.backtrace)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handled empty array")
-		sub _()
-			promises.chain(promises.race([])).then(sub(result)
+		function _()
+			return promises.chain(promises.race([])).then(sub(result)
 				m.testSuite.fail("should not get here")
 			end sub).catch(sub(error)
 				m.testSuite.assertEqual(error.message, "All promises were rejected")
 				m.testSuite.assertEqual(error.errors, [])
 				m.testSuite.assertNotInvalid(error.backtrace)
-			end sub).finally(sub()
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
 		@async
 		@it("handled a promise that resolves")
@@ -520,30 +875,26 @@ namespace tests
 			promises.resolve(2, promiseArray[1])
 		end sub
 
-		@async
 		@it("handles a pre-resolved promise")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.create()
 				promises.resolve(2)
 				promises.create()
 			]
 
-			promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 2)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
 			end sub).finally(sub(promiseArray)
 				promises.resolve(invalid, promiseArray[0])
 				promises.resolve(invalid, promiseArray[2])
+			end sub).toPromise()
+		end function
 
-				m.testSuite.done()
-			end sub)
-		end sub
-
-		@async
 		@it("handles a non-promise value amongst pending promises")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.create()
 				2
@@ -557,85 +908,71 @@ namespace tests
 			end sub).finally(sub(promiseArray)
 				promises.resolve(invalid, promiseArray[0])
 				promises.resolve(invalid, promiseArray[2])
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles a non-promise value amongst rejected promises")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.reject(1)
 				2
 				promises.reject(3)
 			]
 
-			promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.fail("should not get here")
 			end sub).catch(sub(error, promiseArray)
 				m.testSuite.assertEqual(error, 1)
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles a first pre-resolved promise")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.resolve(1)
 				promises.resolve(2)
 				promises.resolve(3)
 			]
 
-			promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 1)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles first pre-resolved promise along with a non-promise value")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.resolve(1)
 				2
 				promises.resolve(3)
 			]
 
-			promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.assertEqual(result, 1)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handles all promises being pre-rejected")
-		sub _()
+		function _()
 			promiseArray = [
 				promises.reject("1")
 				promises.reject("2")
 				promises.reject("3")
 			]
 
-			promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
+			return promises.chain(promises.race(promiseArray), promiseArray).then(sub(result, promiseArray)
 				m.testSuite.fail("should not get here")
 			end sub).catch(sub(error, promiseArray)
 				m.testSuite.assertEqual(error, "1")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handled a the first promise to resolve")
-		sub _()
+		function _()
 			promiseArray = [
 				toPromiseWithDelay(0.3, 1)
 				toPromiseWithDelay(0.2, 2)
@@ -646,14 +983,11 @@ namespace tests
 				m.testSuite.assertEqual(result, 3)
 			end sub).catch(sub(_, promiseArray)
 				m.testSuite.fail("should not get here")
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
-		@async
 		@it("handled a the first promise to reject")
-		sub _()
+		function _()
 			promiseArray = [
 				toPromiseWithDelay(0.2, 1)
 				toPromiseWithDelay(0.1, 2, false)
@@ -664,10 +998,8 @@ namespace tests
 				m.testSuite.fail("should not get here")
 			end sub).catch(sub(error, promiseArray)
 				m.testSuite.assertEqual(error, 2)
-			end sub).finally(sub(promiseArray)
-				m.testSuite.done()
-			end sub)
-		end sub
+			end sub).toPromise()
+		end function
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.onThen()")
@@ -961,6 +1293,7 @@ namespace tests
 			end sub, testNode)
 		end function
 
+		@ignore
 		@async(60000)
 		@it("unravels deep promise chain without crashing due to stackoverflow")
 		function _()

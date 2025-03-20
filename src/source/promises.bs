@@ -639,7 +639,7 @@ namespace promises.internal
         callback = storageItem.callback
         context = storageItem.context
         hasContext = promises.internal.isSet(context)
-        hasPromiseValue = promises.internal.isSet(promiseValue)
+        isThenOrCatch = promises.internal.isSet(promiseValue)
         'only call the callback if configured to do so
         if callCallback then
             #if PROMISES_DEBUG
@@ -647,7 +647,7 @@ namespace promises.internal
             #end if
             try
                 '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
-                if hasPromiseValue then
+                if isThenOrCatch then
                     if hasContext then
                         callbackResult = callback(promiseValue, context)
                     else
@@ -678,32 +678,61 @@ namespace promises.internal
             end if
         end if
 
-        'if the .then() callback returned a promise. wait for it to resolve and THEN resolve the newPromise
-        if promises.isPromise(callbackResult) then
-            callbackPromise = callbackResult
-            'wait for the callback promise to complete
-            promises.onFinally(callbackPromise, sub (context as object)
-                promiseState = context.callbackPromise.promiseState
-                promiseResult = context.callbackPromise.promiseResult
+        if isThenOrCatch then
+            'if the .then() callback returned a promise. wait for it to resolve and THEN resolve the newPromise
+            if promises.isPromise(callbackResult) then
+                callbackPromise = callbackResult
+                'wait for the callback promise to complete
+                promises.onFinally(callbackPromise, sub (context as object)
+                    promiseState = context.callbackPromise.promiseState
+                    promiseResult = context.callbackPromise.promiseResult
 
-                if promiseState = promises.PromiseState.resolved then
-                    'the callback promise is complete. resolve the newPromise
-                    promises.resolve(promiseResult, context.newPromise)
-                    return
-                end if
+                    if promiseState = promises.PromiseState.resolved then
+                        'the callback promise is complete. resolve the newPromise
+                        promises.resolve(promiseResult, context.newPromise)
+                        return
+                    end if
 
-                if promiseState = promises.PromiseState.rejected then
-                    promises.reject(promiseResult, context.newPromise)
-                    return
-                end if
-            end sub, {
-                newPromise: newPromise
-                callbackPromise: callbackPromise
-            })
+                    if promiseState = promises.PromiseState.rejected then
+                        promises.reject(promiseResult, context.newPromise)
+                        return
+                    end if
+                end sub, {
+                    newPromise: newPromise
+                    callbackPromise: callbackPromise
+                })
 
-            'the .then() callback returned a non-promise. Resolve the newPromise immediately with this value
+                'the .then() callback returned a non-promise. Resolve the newPromise immediately with this value
+            else
+                promises.resolve(callbackResult, newPromise)
+            end if
         else
-            promises.resolve(callbackResult, newPromise)
+            ' This is a .finally() block
+            if promises.isPromise(callbackResult) then
+                callbackPromise = callbackResult
+                context = {
+                    newPromise: newPromise
+                    originalPromise: originalPromise
+                }
+
+                promises.onThen(callbackPromise, sub (result as dynamic, context as dynamic)
+                    if context.originalPromise.promiseState = promises.PromiseState.resolved then
+                        promises.resolve(context.originalPromise.promiseResult, context.newPromise)
+                    else
+                        promises.reject(context.originalPromise.promiseResult, context.newPromise)
+                    end if
+                end sub, context)
+
+                promises.onCatch(callbackPromise, sub (error as dynamic, context as dynamic)
+                    promises.reject(error, context.newPromise)
+                end sub, context)
+            else
+                if originalPromise.promiseState = promises.PromiseState.resolved then
+                    promises.resolve(originalPromise.promiseResult, newPromise)
+                else
+                    promises.reject(originalPromise.promiseResult, newPromise)
+                end if
+            end if
         end if
     end sub
 
