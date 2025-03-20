@@ -18,7 +18,7 @@
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
     "roku-deploy": "^3.10.3",
-    "rooibos-roku": "^5.8.0",
+    "rooibos-roku": "^5.15.6",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },
