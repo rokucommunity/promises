@@ -135,12 +135,14 @@ export class UnitTestRunner {
 								console.log(`Testing complete`);
 								this.updateResults(currentTestInfo.message, currentTestInfo.status === 'passed');
 
-								// Stop watching the logs if code coverage is not enabled
-								if (!env.CODE_COVERAGE) {
-									this.processLogs = false;
-									clearTimeout(timeoutId);
-									resolve();
-								}
+								rokuDeploy.pressHomeButton(this.host).finally(() => {
+									// Stop watching the logs if code coverage is not enabled
+									if (!env.CODE_COVERAGE) {
+										this.processLogs = false;
+										clearTimeout(timeoutId);
+										resolve();
+									}
+								});
 							}
 						}
 
@@ -182,20 +184,24 @@ export class UnitTestRunner {
 			message: ''
 		};
 
+		// Legacy support
 		// regex and examples also available at: https://regex101.com/r/PPoFlq/1
 		// Overall this regex is looking for the main summery results of the tests
-		const resultRegex = /(?<fullMatch>Total:\s*(?<total>\d+)\s*Passed:\s*(?<passed>\d+)\s*Crashed:\s*(?<crashed>\d+)\s*Failed:\s*(?<failed>\d+)\s*Ignored:\s*(?<ignored>\d+)\s*Time:\s*(?<time>\d+ms)\s*RESULT:\s*(?<result>\w+))/gmis;
+		// const resultRegex = /(?<fullMatch>Total:\s*(?<total>\d+)\s*Passed:\s*(?<passed>\d+)\s*Crashed:\s*(?<crashed>\d+)\s*Failed:\s*(?<failed>\d+)\s*Ignored:\s*(?<ignored>\d+)\s*Time:\s*(?<time>\d+ms)\s*.*RESULT:\s*(?<result>\w+))/gmis;
+
+		// Mocha test results
+		const resultRegex = /(?<fullMatch>\[Rooibos Result\]: (?<result>FAIL|PASS))/g;
 
 		let match = resultRegex.exec(this.testingLogs);
 
 		if (match) {
-			if (match.groups?.result.toLowerCase() === 'success') {
+			if (match.groups?.result.toLowerCase() === 'pass') {
 				currentTestInfo.status = 'passed';
 			} else {
 				currentTestInfo.status = 'failure';
 			}
 
-			currentTestInfo.message = match.groups?.fullMatch!;
+			currentTestInfo.message = match.groups?.fullMatch;
 		}
 
 		return currentTestInfo;

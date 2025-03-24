@@ -21,6 +21,10 @@
 		"catchCrashes": true,
 		"lineWidth": 70,
 		"failFast": false,
-		"sendHomeOnFinish": false
+		"sendHomeOnFinish": false,
+		"colorizeOutput": true,
+		"reporters": [
+			"mocha"
+		]
 	}
 }
