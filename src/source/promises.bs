@@ -24,17 +24,17 @@ namespace promises
     end function
 
     ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
-    function onThen(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
+    function onThen(promise as dynamic, callback = promises.internal.identity as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("then", promise, callback, context)
     end function
 
     ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
-    function onCatch(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
+    function onCatch(promise as dynamic, callback = promises.internal.thrower as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("catch", promise, callback, context)
     end function
 
     ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
-    function onFinally(promise as dynamic, callback as function, context = "__INVALID__" as object) as dynamic
+    function onFinally(promise as dynamic, callback = promises.internal.defaultFinally as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("finally", promise, callback, context)
     end function
 
@@ -443,17 +443,17 @@ namespace promises
         return {
             _lastPromise: initialPromise
             _context: context
-            then: function(callback as function) as object
+            then: function(callback = promises.internal.identity as function) as object
                 m._lastPromise = promises.onThen(m._lastPromise, callback, m._context)
                 return m
             end function
 
-            "catch": function(callback as function) as object
+            "catch": function(callback = promises.internal.thrower as function) as object
                 m._lastPromise = promises.onCatch(m._lastPromise, callback, m._context)
                 return m
             end function
 
-            finally: function(callback as function) as object
+            finally: function(callback = promises.internal.defaultFinally as function) as object
                 m._lastPromise = promises.onFinally(m._lastPromise, callback, m._context)
                 return m
             end function
@@ -469,6 +469,9 @@ namespace promises
         if promises.isPromise(value) then return value
         return promises.resolve(value)
     end function
+
+    sub noOp(value = invalid, _ = invalid)
+    end sub
 
     enum PromiseState
         pending = "pending"
@@ -736,6 +739,17 @@ namespace promises.internal
                 end if
             end if
         end if
+    end sub
+
+    function identity(value = invalid, _ = invalid) as dynamic
+        return value
+    end function
+
+    function thrower(value = invalid, _ = invalid) as dynamic
+        return promises.reject(value)
+    end function
+
+    sub defaultFinally(_ = invalid)
     end sub
 
     '
