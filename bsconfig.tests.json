@@ -24,7 +24,7 @@
 		"sendHomeOnFinish": false,
 		"colorizeOutput": true,
 		"reporters": [
-      "mocha"
-    ]
+			"mocha"
+		]
 	}
 }
