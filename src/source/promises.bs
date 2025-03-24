@@ -394,7 +394,9 @@ namespace promises
     end function
 
     function isComplete(promise as object) as boolean
-        return promises.isPromise(promise) and (promise.promiseState = promises.PromiseState.resolved or promise.promiseState = promises.PromiseState.rejected)
+        if not promises.isPromise(promise) then return false
+        state = promise.promiseState
+        return state = promises.PromiseState.resolved or state = promises.PromiseState.rejected
     end function
 
     ' Determines if the given item is a promise.
