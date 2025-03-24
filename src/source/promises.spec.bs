@@ -74,6 +74,38 @@ namespace tests
 			end sub, context)
 		end function
 
+		@it("handles default then identify passthrough calls")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				result: []
+			}
+
+			results = promises.chain(promises.resolve(1), context).then(function(result, context)
+				context.thenCount++
+				context.result.push(result)
+				return 2
+			end function).then().then().then(function(result, context)
+				context.thenCount++
+				context.result.push(result)
+			end function).catch(sub(error, context)
+				context.catchCount++
+			end sub).finally(sub(context)
+				context.finallyCount++
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 2
+					catchCount: 0
+					finallyCount: 1
+					result: [1, 2]
+				})
+			end sub, context)
+		end function
+
 		@it("calls thens in order")
 		function _()
 			context = {
@@ -155,6 +187,38 @@ namespace tests
 			end sub, context)
 		end function
 
+		@it("handles default then thrower passthrough calls")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				result: []
+			}
+
+			results = promises.chain(promises.reject(1), context).then(function(result, context)
+				context.thenCount++
+				context.result.push(invalid)
+			end function).catch(function(result, context)
+				context.catchCount++
+				context.result.push(result)
+				return promises.reject(2)
+			end function).catch().catch().catch(function(result, context)
+				context.catchCount++
+				context.result.push(result)
+			end function).finally(sub(context)
+				context.finallyCount++
+			end sub).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 0
+					catchCount: 2
+					finallyCount: 1
+					result: [1, 2]
+				})
+			end sub, context)
+		end function
 
 		@it("calls finally in order")
 		function _()
@@ -197,6 +261,48 @@ namespace tests
 					thenCount: 4
 					catchCount: 0
 					finallyCount: 4
+					result: [1, 2, 3, 4]
+				})
+			end sub, context)
+		end function
+
+		@it("handles default finally passthrough calls")
+		function _()
+			context = {
+				thenCount: 0
+				catchCount: 0
+				finallyCount: 0
+				result: []
+			}
+
+			results = promises.chain(promises.resolve(1), context).then(function(result, context)
+				context.thenCount++
+				context.result.push(result)
+				return 2
+			end function).then(function(result, context)
+				context.thenCount++
+				context.result.push(result)
+				return 3
+			end function).then(function(result, context)
+				context.thenCount++
+				context.result.push(result)
+				return 4
+			end function).then(function(result, context)
+				context.thenCount++
+				context.result.push(result)
+			end function).catch(sub(error, context)
+				context.catchCount++
+			end sub).finally(function(context)
+				context.finallyCount++
+			end function).finally().finally().finally(function(context)
+				context.finallyCount++
+			end function).toPromise()
+
+			return promises.onFinally(results, sub(context)
+				m.testSuite.assertEqual(context, {
+					thenCount: 4
+					catchCount: 0
+					finallyCount: 2
 					result: [1, 2, 3, 4]
 				})
 			end sub, context)
@@ -1184,6 +1290,15 @@ namespace tests
 		end sub
 
 		@async
+		@it("handles empty callbacks")
+		sub _()
+			promises.onThen(promises.onThen(promises.resolve("resolved")), sub(value)
+				m.testSuite.assertEqual(value, "resolved")
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
 		@it("does not response to rejected promises")
 		sub _()
 			context = { thenCount: 0 }
@@ -1206,6 +1321,15 @@ namespace tests
 		@it("catches rejected promises")
 		sub _()
 			promises.onCatch(promises.reject("rejected"), sub(value)
+				m.testSuite.assertEqual(value, "rejected")
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles empty callbacks")
+		sub _()
+			promises.onCatch(promises.onCatch(promises.reject("rejected")), sub(value)
 				m.testSuite.assertEqual(value, "rejected")
 				m.testSuite.done()
 			end sub)
@@ -1243,9 +1367,33 @@ namespace tests
 		end sub
 
 		@async
+		@it("handles resolved promise with empty callback")
+		sub _()
+			promise = promises.onFinally(promises.onFinally(promises.resolve("resolved")), sub()
+			end sub)
+
+			promises.onThen(promise, sub(value)
+				m.testSuite.assertEqual(value, "resolved")
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
 		@it("handles rejected promise")
 		sub _()
 			promise = promises.onFinally(promises.reject("rejected"), sub()
+			end sub)
+
+			promises.onCatch(promise, sub(value)
+				m.testSuite.assertEqual(value, "rejected")
+				m.testSuite.done()
+			end sub)
+		end sub
+
+		@async
+		@it("handles rejected promise with empty callback")
+		sub _()
+			promise = promises.onFinally(promises.onFinally(promises.reject("rejected")), sub()
 			end sub)
 
 			promises.onCatch(promise, sub(value)
