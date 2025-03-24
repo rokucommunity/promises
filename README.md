@@ -9,6 +9,9 @@ A Promise-like implementation for BrightScript/Roku. This is the core functional
 [![license](https://img.shields.io/github/license/rokucommunity/promises.svg)](LICENSE)
 [![Slack](https://img.shields.io/badge/Slack-RokuCommunity-4A154B?logo=slack)](https://join.slack.com/t/rokudevelopers/shared_invite/zt-4vw7rg6v-NH46oY7hTktpRIBM_zGvwA)
 
+> [!CAUTION]
+> The behavior of `.finally()` and `.onFinally()` has changed as of `v0.6.0`. When upgrading from prior versions please be aware that `finally` will no longer suppress rejections in your promise flows. See [#3254](https://github.com/fubotv/rokukor/pull/3254) for details on the fix.
+
 ## Installation
 ### ropm
 The preferred installation method is via [ropm](https://www.npmjs.com/package/ropm)
