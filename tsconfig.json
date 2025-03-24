@@ -3,7 +3,7 @@
         "outDir": "./dist",
         "allowJs": false,
         "module": "commonjs",
-        "target": "es6",
+        "target": "es2018",
         "lib": [
             "esnext"
         ],
