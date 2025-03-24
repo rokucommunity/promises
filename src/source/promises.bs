@@ -470,9 +470,6 @@ namespace promises
         return promises.resolve(value)
     end function
 
-    sub noOp(value = invalid, _ = invalid)
-    end sub
-
     enum PromiseState
         pending = "pending"
         resolved = "resolved"
