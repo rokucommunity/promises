@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.1](https://github.com/rokucommunity/promises/compare/v0.6.0...0.6.1) - 2025-03-25
+### Changed
+ - Fixed an issue where type definitions where malformed ([#34](https://github.com/rokucommunity/promises/pull/34))
+
+
+
 ## [0.6.0](https://github.com/rokucommunity/promises/compare/v0.5.0...v0.6.0) - 2025-03-25
 ### Added
  - Add `Promises.try()` function ([#33](https://github.com/rokucommunity/promises/pull/33))
