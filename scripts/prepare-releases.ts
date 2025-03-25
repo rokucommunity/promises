@@ -1,5 +1,5 @@
 /**
- * the github releases package should INCLUDE the `promises_` prefixes, so run this script 
+ * the github releases package should INCLUDE the `promises_` prefixes, so run this script
  * right afer the brighterscript build, before regex renaming
  */
 import { rokuDeploy } from 'roku-deploy';
@@ -60,7 +60,8 @@ async function prepareForNpm() {
     //remove the `promises.namespace stuff` from d.bs files
     replaceInFile(s`${distDir}/source/promises.d.bs`,
         [/namespace promises\r?\n/, ''],
-        [/end namespace\r?\n\s*namespace promises\.internal/, 'namespace internal'],
+        [/end namespace\r?\n\s*namespace promises\.configuration/, 'namespace configuration'],
+        [/namespace promises\.internal/, 'namespace internal'],
         versionReplacement
     );
 }
