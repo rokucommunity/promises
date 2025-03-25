@@ -470,20 +470,6 @@ namespace promises
         return promises.resolve(value)
     end function
 
-    ' Sets a global flag to enable or disable logging of crashes when calling callback functions
-    function setCrashLogging(enabled as boolean) as boolean
-        globalNode = m.global
-        if type(globalNode) = "roSGNode" then
-            if enabled then
-                globalNode.update({ __promises__crashLoggingEnabled: enabled }, true)
-            else
-                globalNode.removeField("__promises__crashLoggingEnabled")
-            end if
-            return true
-        end if
-        return false
-    end function
-
     enum PromiseState
         pending = "pending"
         resolved = "resolved"
@@ -495,6 +481,21 @@ namespace promises
         ' array of dynamic rejected values
         errors as dynamic
     end interface
+end namespace
+namespace promises.configuration
+    ' Sets a global flag to enable or disable logging of crashes when calling callback functions
+    function enableCrashLogging(enabled as boolean) as boolean
+        globalNode = m.global
+        if type(globalNode) = "roSGNode" then
+            if enabled then
+                globalNode.update({ __promises__crashLoggingEnabled: enabled }, true)
+            else
+                globalNode.removeField("__promises__crashLoggingEnabled")
+            end if
+            return true
+        end if
+        return false
+    end function
 end namespace
 
 namespace promises.internal

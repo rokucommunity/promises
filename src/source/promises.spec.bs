@@ -1459,17 +1459,17 @@ namespace tests
 		end sub
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-		@describe("promises.setCrashLogging()")
+		@describe("promises.enableCrashLogging()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 		@beforeEach
-		sub beforeEachSetCrashLogging()
+		sub beforeEachenableCrashLogging()
 			m.global.removeField("__promises__crashLoggingEnabled")
 			m.node.delete("formatStackTraceCalled")
 		end sub
 
 		@afterEach
-		sub afterEachSetCrashLogging()
+		sub afterEachenableCrashLogging()
 			m.global.removeField("__promises__crashLoggingEnabled")
 			m.node.delete("formatStackTraceCalled")
 		end sub
@@ -1477,15 +1477,15 @@ namespace tests
 		@it("properly adds and removes the setting from global")
 		function _()
 			m.assertFalse(m.global.hasField("__promises__crashLoggingEnabled"))
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 			m.assertNodeContainsFields(m.global, { "__promises__crashLoggingEnabled": true })
-			promises.setCrashLogging(false)
+			promises.configuration.enableCrashLogging(false)
 			m.assertFalse(m.global.hasField("__promises__crashLoggingEnabled"))
 		end function
 
-		@it("setCrashLogging(true) onThen() no context provided")
+		@it("enableCrashLogging(true) onThen() no context provided")
 		function _()
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(error, message)
@@ -1503,9 +1503,9 @@ namespace tests
 			end sub).toPromise()
 		end function
 
-		@it("setCrashLogging(true) onThen() context was provided")
+		@it("enableCrashLogging(true) onThen() context was provided")
 		function _()
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(_, _)
@@ -1520,9 +1520,9 @@ namespace tests
 			end sub).toPromise()
 		end function
 
-		@it("setCrashLogging(true) onCatch() no context provided")
+		@it("enableCrashLogging(true) onCatch() no context provided")
 		function _()
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(_, _)
@@ -1537,9 +1537,9 @@ namespace tests
 			end sub).toPromise()
 		end function
 
-		@it("setCrashLogging(true) onCatch() context was provided")
+		@it("enableCrashLogging(true) onCatch() context was provided")
 		function _()
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(_, _)
@@ -1554,9 +1554,9 @@ namespace tests
 			end sub).toPromise()
 		end function
 
-		@it("setCrashLogging(true) onFinally() no context provided")
+		@it("enableCrashLogging(true) onFinally() no context provided")
 		function _()
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(_, _)
@@ -1571,9 +1571,9 @@ namespace tests
 			end sub).toPromise()
 		end function
 
-		@it("setCrashLogging(true) onFinally() context was provided")
+		@it("enableCrashLogging(true) onFinally() context was provided")
 		function _()
-			promises.setCrashLogging(true)
+			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(_, _)
