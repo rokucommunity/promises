@@ -11,6 +11,7 @@
 	],
 	"rooibos": {
 		"isRecordingCodeCoverage": false,
+		"isGlobalMethodMockingEnabled": true,
 		"testsFilePattern": null,
 		"tags": [
 			"!integration",

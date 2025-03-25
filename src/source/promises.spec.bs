@@ -1459,6 +1459,136 @@ namespace tests
 		end sub
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.setCrashLogging()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		@beforeEach
+		sub beforeEachSetCrashLogging()
+			m.global.removeField("__promises__crashLoggingEnabled")
+			m.node.delete("formatStackTraceCalled")
+		end sub
+
+		@afterEach
+		sub afterEachSetCrashLogging()
+			m.global.removeField("__promises__crashLoggingEnabled")
+			m.node.delete("formatStackTraceCalled")
+		end sub
+
+		@it("properly adds and removes the setting from global")
+		function _()
+			m.assertFalse(m.global.hasField("__promises__crashLoggingEnabled"))
+			promises.setCrashLogging(true)
+			m.assertNodeContainsFields(m.global, { "__promises__crashLoggingEnabled": true })
+			promises.setCrashLogging(false)
+			m.assertFalse(m.global.hasField("__promises__crashLoggingEnabled"))
+		end function
+
+		@it("setCrashLogging(true) onThen() no context provided")
+		function _()
+			promises.setCrashLogging(true)
+
+			m.node.formatStackTraceCalled = 0
+			m.stubCall(promises.internal.formatStackTrace, function(error, message)
+				m.testSuite.assertNotInvalid(error.message)
+				m.testSuite.assertNotInvalid(error.backtrace)
+				m.testSuite.assertEqual(message, "my error")
+				m.formatStackTraceCalled++
+				return ""
+			end function)
+
+			return promises.chain(promises.resolve("resolved")).then(sub(value)
+				throw "my error"
+			end sub).catch(sub(error)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+			end sub).toPromise()
+		end function
+
+		@it("setCrashLogging(true) onThen() context was provided")
+		function _()
+			promises.setCrashLogging(true)
+
+			m.node.formatStackTraceCalled = 0
+			m.stubCall(promises.internal.formatStackTrace, function(_, _)
+				m.formatStackTraceCalled++
+				return ""
+			end function)
+
+			return promises.chain(promises.resolve("resolved"), {}).then(sub(value, context)
+				test = 1/0
+			end sub).catch(sub(error, context)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+			end sub).toPromise()
+		end function
+
+		@it("setCrashLogging(true) onCatch() no context provided")
+		function _()
+			promises.setCrashLogging(true)
+
+			m.node.formatStackTraceCalled = 0
+			m.stubCall(promises.internal.formatStackTrace, function(_, _)
+				m.formatStackTraceCalled++
+				return ""
+			end function)
+
+			return promises.chain(promises.reject("rejected")).catch(sub(error)
+				test = 1/0
+			end sub).catch(sub(error)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+			end sub).toPromise()
+		end function
+
+		@it("setCrashLogging(true) onCatch() context was provided")
+		function _()
+			promises.setCrashLogging(true)
+
+			m.node.formatStackTraceCalled = 0
+			m.stubCall(promises.internal.formatStackTrace, function(_, _)
+				m.formatStackTraceCalled++
+				return ""
+			end function)
+
+			return promises.chain(promises.reject("rejected"), {}).catch(sub(error, context)
+				test = 1/0
+			end sub).catch(sub(error, context)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+			end sub).toPromise()
+		end function
+
+		@it("setCrashLogging(true) onFinally() no context provided")
+		function _()
+			promises.setCrashLogging(true)
+
+			m.node.formatStackTraceCalled = 0
+			m.stubCall(promises.internal.formatStackTrace, function(_, _)
+				m.formatStackTraceCalled++
+				return ""
+			end function)
+
+			return promises.chain(promises.resolve("resolved")).finally(sub()
+				test = 1/0
+			end sub).catch(sub(error)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+			end sub).toPromise()
+		end function
+
+		@it("setCrashLogging(true) onFinally() context was provided")
+		function _()
+			promises.setCrashLogging(true)
+
+			m.node.formatStackTraceCalled = 0
+			m.stubCall(promises.internal.formatStackTrace, function(_, _)
+				m.formatStackTraceCalled++
+				return ""
+			end function)
+
+			return promises.chain(promises.resolve("resolved"), {}).finally(sub(context)
+				test = 1/0
+			end sub).catch(sub(error, context)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+			end sub).toPromise()
+		end function
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("does not resolve to soon or too late")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
