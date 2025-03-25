@@ -1065,6 +1065,8 @@ namespace promises.internal
 
     ' Log the error if crash logging is enabled
     sub logCrashIfEnabled(error as dynamic)
+        ' Filter out user defined errors
+        if error.number = 40 then return
         logCrashes = m.global?.__promises__crashLoggingEnabled
         if type(logCrashes) <> "roBoolean" then
             logCrashes = false
