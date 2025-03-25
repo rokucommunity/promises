@@ -482,6 +482,21 @@ namespace promises
         errors as dynamic
     end interface
 end namespace
+namespace promises.configuration
+    ' Sets a global flag to enable or disable logging of crashes when calling callback functions
+    function enableCrashLogging(enabled as boolean) as boolean
+        globalNode = m.global
+        if type(globalNode) = "roSGNode" then
+            if enabled then
+                globalNode.update({ __promises__crashLoggingEnabled: enabled }, true)
+            else
+                globalNode.removeField("__promises__crashLoggingEnabled")
+            end if
+            return true
+        end if
+        return false
+    end function
+end namespace
 
 namespace promises.internal
     enum PromiseState
@@ -675,6 +690,7 @@ namespace promises.internal
                                 print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
                                 callbackResult = callback(promiseValue)
                             else
+                                promises.internal.logCrashIfEnabled(error)
                                 callbackResult = promises.reject(error)
                             end if
                         end try
@@ -695,6 +711,7 @@ namespace promises.internal
                                 print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
                                 callbackResult = callback()
                             else
+                                promises.internal.logCrashIfEnabled(error)
                                 callbackResult = promises.reject(error)
                             end if
                         end try
@@ -706,6 +723,7 @@ namespace promises.internal
                 #if PROMISES_DEBUG
                     print "[promises.notify]", originalPromise.id, "callback for", newPromise.id, "threw exception", e
                 #end if
+                promises.internal.logCrashIfEnabled(e)
                 'the result is a rejected promise
                 callbackResult = promises.reject(e)
             end try
@@ -822,6 +840,7 @@ namespace promises.internal
                 #if PROMISES_DEBUG
                     print "Crash during utils.delay:", e
                 #end if
+                promises.internal.logCrashIfEnabled(e)
             end try
             m.delete(delayId)
         end sub)
@@ -889,4 +908,16 @@ namespace promises.internal
         end for
         return output
     end function
+
+    ' Log the error if crash logging is enabled
+    sub logCrashIfEnabled(error as dynamic)
+        logCrashes = m.global?.__promises__crashLoggingEnabled
+        if type(logCrashes) <> "roBoolean" then
+            logCrashes = false
+        end if
+
+        if logCrashes then
+            print "[promises.error]: " promises.internal.formatStackTrace(error, error.message)
+        end if
+    end sub
 end namespace
