@@ -6,9 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.2](https://github.com/rokucommunity/promises/compare/v0.6.1...0.6.2) - 2025-03-25
+### Fixed
+ - Issue where user defined errors would also be logged ([#35](https://github.com/rokucommunity/promises/pull/35))
+
+
+
 ## [0.6.1](https://github.com/rokucommunity/promises/compare/v0.6.0...0.6.1) - 2025-03-25
-### Changed
- - Fixed an issue where type definitions where malformed ([#34](https://github.com/rokucommunity/promises/pull/34))
+### Fixed
+ - Issue where type definitions where malformed ([#34](https://github.com/rokucommunity/promises/pull/34))
 
 
 
