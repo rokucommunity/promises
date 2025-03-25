@@ -1483,15 +1483,12 @@ namespace tests
 			m.assertFalse(m.global.hasField("__promises__crashLoggingEnabled"))
 		end function
 
-		@it("enableCrashLogging(true) onThen() no context provided")
+		@it("enableCrashLogging(true) onThen() no context provided should not log")
 		function _()
 			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
 			m.stubCall(promises.internal.formatStackTrace, function(error, message)
-				m.testSuite.assertNotInvalid(error.message)
-				m.testSuite.assertNotInvalid(error.backtrace)
-				m.testSuite.assertEqual(message, "my error")
 				m.formatStackTraceCalled++
 				return ""
 			end function)
@@ -1499,7 +1496,7 @@ namespace tests
 			return promises.chain(promises.resolve("resolved")).then(sub(value)
 				throw "my error"
 			end sub).catch(sub(error)
-				m.testSuite.assertEqual(m.formatStackTraceCalled, 1)
+				m.testSuite.assertEqual(m.formatStackTraceCalled, 0)
 			end sub).toPromise()
 		end function
 
@@ -1508,7 +1505,10 @@ namespace tests
 			promises.configuration.enableCrashLogging(true)
 
 			m.node.formatStackTraceCalled = 0
-			m.stubCall(promises.internal.formatStackTrace, function(_, _)
+			m.stubCall(promises.internal.formatStackTrace, function(error, message)
+				m.testSuite.assertNotInvalid(error.message)
+				m.testSuite.assertNotInvalid(error.backtrace)
+				m.testSuite.assertEqual(message, "Divide by Zero.")
 				m.formatStackTraceCalled++
 				return ""
 			end function)
