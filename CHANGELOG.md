@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.0](https://github.com/rokucommunity/promises/compare/v0.5.0...v0.6.0) - 2025-03-25
+### Added
+ - Add `Promises.try()` function ([#33](https://github.com/rokucommunity/promises/pull/33))
+ - Support logging when crashes are detected in callback functions ([#32](https://github.com/rokucommunity/promises/pull/32))
+ - Support default callback handlers ([#30](https://github.com/rokucommunity/promises/pull/30))
+### Fixed
+ - better callback param missmatch handling ([#31](https://github.com/rokucommunity/promises/pull/31))
+ - (breaking change) `.finally()` not correctly respecting rejections ([#29](https://github.com/rokucommunity/promises/pull/29))
+
+
+
 ## [0.5.0](https://github.com/rokucommunity/promises/compare/v0.4.0...v0.5.0) - 2024-11-18
 ### Added
  - Feature/allSettled(), any(), race(). ([#25](https://github.com/rokucommunity/promises/pull/25))
