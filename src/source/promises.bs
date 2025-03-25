@@ -38,6 +38,151 @@ namespace promises
         return promises.internal.on("finally", promise, callback, context)
     end function
 
+    ' The Promise.try() method takes a callback of any kind (returns or throws, synchronously or asynchronously) and wraps its result in a Promise.
+    ' @param {function} callback - The callback to wrap in a promise
+    ' @param {dynamic} args - The arguments to pass to the callback. Max 32 arguments.
+    function try(callback as function, args = invalid as dynamic) as dynamic
+        try
+            if type(args) = "roArray" then
+                argsCount = args.count()
+
+                if argsCount < 16 then ' 0-15 args
+                    if argsCount < 8 then ' 0-7 args
+                        if argsCount < 4 then ' 0-3 args
+                            if argsCount < 2 then ' 0-1 args
+                                if argsCount = 0 then ' 0 args
+                                    result = callback()
+                                else ' 1 arg
+                                    result = callback(args[0])
+                                end if
+                            else ' 2-3 args
+                                if argsCount = 2 then ' 2 args
+                                    result = callback(args[0], args[1])
+                                else ' 3 args
+                                    result = callback(args[0], args[1], args[2])
+                                end if
+                            end if
+                        else ' 4-7 args
+                            if argsCount < 6 then
+                                if argsCount = 4 then ' 4 args
+                                    result = callback(args[0], args[1], args[2], args[3])
+                                else ' 5 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4])
+                                end if
+                            else ' 6-7 args
+                                if argsCount = 6 then ' 6 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5])
+                                else ' 7 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
+                                end if
+                            end if
+                        end if
+                    else ' 8-15 args
+                        if argsCount < 12 then ' 8-11 args
+                            if argsCount < 10 then ' 8-9 args
+                                if argsCount = 8 then ' 8 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7])
+                                else ' 9 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8])
+                                end if
+                            else ' 10-11 args
+                                if argsCount = 10 then ' 10 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9])
+                                else ' 11 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10])
+                                end if
+                            end if
+                        else ' 12-15 args
+                            if argsCount < 14 then ' 12-13 args
+                                if argsCount = 12 then ' 12 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11])
+                                else ' 13 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12])
+                                end if
+                            else ' 14-15 args
+                                if argsCount = 14 then ' 14 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13])
+                                else ' 15 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14])
+                                end if
+                            end if
+                        end if
+                    end if
+                else ' 16-32 args
+                    if argsCount < 24 then ' 16-23 args
+                        if argsCount < 20 then ' 16-19 args
+                            if argsCount < 18 then ' 16-17 args
+                                if argsCount = 16 then ' 16 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15])
+                                else ' 17 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16])
+                                end if
+                            else ' 18-19 args
+                                if argsCount = 18 then ' 18 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17])
+                                else ' 19 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18])
+                                end if
+                            end if
+                        else ' 20-23 args
+                            if argsCount < 22 then ' 20-21 args
+                                if argsCount = 20 then ' 20 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19])
+                                else ' 21 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20])
+                                end if
+                            else ' 22-23 args
+                                if argsCount = 22 then ' 22 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21])
+                                else ' 23 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22])
+                                end if
+                            end if
+                        end if
+                    else ' 24-32 args
+                        if argsCount < 28 then ' 24-27 args
+                            if argsCount < 26 then ' 24-25 args
+                                if argsCount = 24 then ' 24 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23])
+                                else ' 25 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24])
+                                end if
+                            else ' 26-27 args
+                                if argsCount = 26 then ' 26 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25])
+                                else ' 27 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26])
+                                end if
+                            end if
+                        else ' 28-32 args
+                            if argsCount < 30 then ' 28-29 args
+                                if argsCount = 28 then ' 28 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27])
+                                else ' 29 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28])
+                                end if
+                            else ' 30-32 args
+                                if (argsCount = 30) then ' 30 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29])
+                                else if argsCount = 31 then ' 31 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29], args[30])
+                                else ' 32 args
+                                    result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29], args[30], args[31])
+                                end if
+                            end if
+                        end if
+                    end if
+                end if
+            else
+                result = callback()
+            end if
+
+            return promises.ensurePromise(result)
+        catch e
+            return promises.reject(e)
+        end try
+    end function
+
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when all of the input's promises fulfill (including when an empty array is passed), with an array of the fulfillment values.
     ' It rejects when any of the input's promises rejects, with this first rejection reason.

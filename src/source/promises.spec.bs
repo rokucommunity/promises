@@ -1612,6 +1612,427 @@ namespace tests
 		end function
 
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		@describe("promises.try()")
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		@it("returns a the same promise if the callback returns a promise")
+		function _()
+			resolvedPromiseParam = promises.resolve(1)
+			resolvedPromise = promises.try(function(arg)
+				return arg
+			end function, [resolvedPromiseParam])
+
+			m.assertTrue(promises.isPromise(resolvedPromise))
+			m.assertTrue(resolvedPromise.isSameNode(resolvedPromiseParam))
+
+			rejectedPromiseParam = promises.reject("error")
+			rejectedPromise = promises.try(function(arg)
+				return arg
+			end function, [rejectedPromiseParam])
+
+			m.assertTrue(promises.isPromise(rejectedPromise))
+			m.assertTrue(rejectedPromise.isSameNode(rejectedPromiseParam))
+
+			return promises.onThen(promises.allSettled([resolvedPromise, rejectedPromise]), sub(results)
+				m.testSuite.assertEqual(results, [
+					{ status: promises.PromiseState.resolved, value: 1 }
+					{ status: promises.PromiseState.rejected, reason: "error" }
+				])
+			end sub)
+		end function
+
+		@it("returns a rejected promise if the callback throws an error")
+		function _()
+			promise = promises.try(function()
+				throw "error"
+			end function)
+
+			m.assertTrue(promises.isPromise(promise))
+
+			return promises.onCatch(promise, sub(error)
+				m.testSuite.assertEqual(error.message, "error")
+				m.testSuite.assertNotInvalid(error.backTrace)
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with no augments wrapped in a promise")
+		function _()
+			promise = promises.try(function()
+				return true
+			end function)
+
+			m.assertTrue(promises.isPromise(promise))
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, true)
+			end sub)
+		end function
+
+
+		@it("calls the callback when supplied empty augments")
+		function _()
+			promise = promises.try(function()
+				return true
+			end function, [])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, true)
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 1 augment")
+		function _()
+			promise = promises.try(function(a)
+				return [a]
+			end function, [1])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 2 augments")
+		function _()
+			promise = promises.try(function(a, b)
+				return [a, b]
+			end function, [1, 2])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 3 augments")
+		function _()
+			promise = promises.try(function(a, b, c)
+				return [a, b, c]
+			end function, [1, 2, 3])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 4 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d)
+				return [a, b, c, d]
+			end function, [1, 2, 3, 4])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 5 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e)
+				return [a, b, c, d, e]
+			end function, [1, 2, 3, 4, 5])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 6 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f)
+				return [a, b, c, d, e, f]
+			end function, [1, 2, 3, 4, 5, 6])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 7 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g)
+				return [a, b, c, d, e, f, g]
+			end function, [1, 2, 3, 4, 5, 6, 7])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 8 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h)
+				return [a, b, c, d, e, f, g, h]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 9 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i)
+				return [a, b, c, d, e, f, g, h, i]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 10 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j)
+				return [a, b, c, d, e, f, g, h, i, j]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 11 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k)
+				return [a, b, c, d, e, f, g, h, i, j, k]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 12 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l)
+				return [a, b, c, d, e, f, g, h, i, j, k, l]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 13 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 14 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 15 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 16 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 17 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 18 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 19 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 20 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 21 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 22 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 23 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 24 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 25 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 26 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 27 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 28 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 29 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 30 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 31 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31])
+			end sub)
+		end function
+
+		@it("calls the callback when supplied with 32 augments")
+		function _()
+			promise = promises.try(function(a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af)
+				return [a, b, c, d, e, f, g, h, i, j, k, l, mm, n, o, p, q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af]
+			end function, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
+
+			return promises.onThen(promise, sub(result)
+				m.testSuite.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32])
+			end sub)
+		end function
+
+		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		@describe("promises.resolve()/promises.reject()")
 		'+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
