@@ -1290,6 +1290,16 @@ namespace tests
 		end sub
 
 		@async
+		@it("recovered on wrong num of callback args")
+		sub _()
+			context = {}
+			promises.onThen(promises.resolve("resolved"), sub(value)
+				m.testSuite.assertEqual(value, "resolved")
+				m.testSuite.done()
+			end sub, context)
+		end sub
+
+		@async
 		@it("handles empty callbacks")
 		sub _()
 			promises.onThen(promises.onThen(promises.resolve("resolved")), sub(value)
@@ -1324,6 +1334,16 @@ namespace tests
 				m.testSuite.assertEqual(value, "rejected")
 				m.testSuite.done()
 			end sub)
+		end sub
+
+		@async
+		@it("recovered on wrong num of callback args")
+		sub _()
+			context = {}
+			promises.onCatch(promises.reject("rejected"), sub(value)
+				m.testSuite.assertEqual(value, "rejected")
+				m.testSuite.done()
+			end sub, context)
 		end sub
 
 		@async
@@ -1364,6 +1384,15 @@ namespace tests
 				m.testSuite.assertEqual(value, "resolved")
 				m.testSuite.done()
 			end sub)
+		end sub
+
+		@async
+		@it("recovered on wrong num of callback args")
+		sub _()
+			context = {}
+			promises.onFinally(promises.resolve("resolved"), sub()
+				m.testSuite.done()
+			end sub, context)
 		end sub
 
 		@async

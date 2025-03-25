@@ -500,6 +500,20 @@ namespace promises.internal
         m.delete("__promises__" + promise.id)
     end sub
 
+    function getLibPath() as string
+        path = m.__promises__LibPath
+        if type(path) = "String" then return path
+
+        try
+            throw "Generating path to the promises library"
+        catch error
+            path = error.backtrace.peek().filename
+        end try
+
+        m.__promises__LibPath = path
+        return path
+    end function
+
     ' Get the storage for a promise on `m`
     function getPromiseStorage(promise as object) as object
         id = "__promises__" + promise.id
@@ -651,7 +665,19 @@ namespace promises.internal
                 '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
                 if isThenOrCatch then
                     if hasContext then
-                        callbackResult = callback(promiseValue, context)
+                        lineNumber = -1
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback(promiseValue, context)
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                callbackResult = callback(promiseValue)
+                            else
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     else
                         callbackResult = callback(promiseValue)
                     end if
@@ -659,7 +685,19 @@ namespace promises.internal
                     '.finally callback takes 1 optional parameter (`context`)
                 else
                     if hasContext then
-                        callbackResult = callback(context)
+                        lineNumber = -1
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback(context)
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                callbackResult = callback()
+                            else
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     else
                         callbackResult = callback()
                     end if
@@ -823,5 +861,32 @@ namespace promises.internal
             end if
         end if
         return true
+    end function
+
+    const wrongNumberOfParametersMessage = "Wrong number of parameters in promise callback. We have recovered, but this should be fixed as performance will suffer."
+
+    ' Returns a string representation of the stack trace
+    ' example:
+    '    Error: some error
+    '        $anon_6c() As Dynamic (pkg:/source/FailedAssertion.spec.brs:11)
+    '        $anon_303() As Dynamic (pkg:/source/rooibos/Test.brs:45)
+    '        $anon_1f2(test As Object) As Dynamic (pkg:/source/rooibos/BaseTestSuite.brs:243)
+    '        $anon_30a() As Dynamic (pkg:/source/rooibos/TestGroup.brs:88)
+    '        $anon_309() As Dynamic (pkg:/source/rooibos/TestGroup.brs:68)
+    '        $anon_1ec() As Dynamic (pkg:/source/rooibos/BaseTestSuite.brs:131)
+    '        $anon_1eb() As Dynamic (pkg:/source/rooibos/BaseTestSuite.brs:121)
+    '        $anon_325(testsuite As Dynamic) As Void (pkg:/source/rooibos/TestRunner.brs:191)
+    '        $anon_322() As Dynamic (pkg:/source/rooibos/TestRunner.brs:72)
+    '        rooibos_init(testscenename As Dynamic) As Void (pkg:/source/rooibos/Rooibos.brs:27)
+    '        main(args As Dynamic) As Dynamic (pkg:/source/Main.brs:2)
+    function formatStackTrace(error as dynamic, message as string) as string
+        output = `${error.message}\n`
+        indent = string(6, " ")
+
+        for i = error.backTrace.count() - 1 to 0 step -1
+            e = error.backTrace[i]
+            output += `${indent}${e["function"]} (${e.filename.trim()}:${e.line_number})\n`
+        end for
+        return output
     end function
 end namespace
