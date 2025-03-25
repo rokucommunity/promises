@@ -685,7 +685,7 @@ namespace promises.internal
                             callbackResult = callback(promiseValue, context)
                         catch error
                             file = error.backtrace.peek()
-                            if lineNumber > -1 and error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
                                 print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
                                 callbackResult = callback(promiseValue)
                             else
@@ -706,7 +706,7 @@ namespace promises.internal
                             callbackResult = callback(context)
                         catch error
                             file = error.backtrace.peek()
-                            if (lineNumber > -1 and error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber) then
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
                                 print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
                                 callbackResult = callback()
                             else
