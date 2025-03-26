@@ -1,4 +1,4 @@
-' @rokucommunity/promises 0.6.3
+' @rokucommunity/promises v0.6.3
 ' Create a new promise
 function promises_create() as dynamic
     'create a unique ID for this promise
