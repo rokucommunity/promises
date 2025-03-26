@@ -1053,12 +1053,12 @@ namespace promises.internal
     '        rooibos_init(testscenename As Dynamic) As Void (pkg:/source/rooibos/Rooibos.brs:27)
     '        main(args As Dynamic) As Dynamic (pkg:/source/Main.brs:2)
     function formatStackTrace(error as dynamic, message as string) as string
-        output = `${error.message}\n`
+        output = error.message + chr(10)
         indent = string(6, " ")
 
         for i = error.backTrace.count() - 1 to 0 step -1
             e = error.backTrace[i]
-            output += `${indent}${e["function"]} (${e.filename.trim()}:${e.line_number})\n`
+            output += indent + e["function"] + " (" + e.filename.trim() + ":" + e.line_number.toStr() + ")" + chr(10)
         end for
         return output
     end function
