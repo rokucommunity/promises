@@ -1,4 +1,4 @@
-<component name="Promise" extends="Node">
+<component name="promises_Promise" extends="Node">
     <interface>
         <field id="promiseState" type="string" value="pending" alwaysNotify="true" />
     </interface>

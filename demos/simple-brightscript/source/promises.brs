@@ -1,9 +1,9 @@
-' @rokucommunity/promises ${VERSION_NUMBER}
+' @rokucommunity/promises 0.6.3
 ' Create a new promise
 function promises_create() as dynamic
     'create a unique ID for this promise
     id = "promise-" + promises_internal_createUuid()
-    node = createObject("roSGNode", "Promise")
+    node = createObject("roSGNode", "promises_Promise")
     node.id = id
     return node
 end function
