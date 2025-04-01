@@ -3,6 +3,7 @@
 
 namespace promises
     ' Create a new promise
+    ' @return {roSGNodePromise }
     function create() as dynamic
         'create a unique ID for this promise
         id = "promise-" + promises.internal.createUuid()
@@ -24,16 +25,30 @@ namespace promises
     end function
 
     ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
+    '
+    ' @param {roSGNodePromise} promise
+    ' @param {Function} [callback=promises.internal.defaultThenCallback]
+    ' @param {object} [context="__INVALID__"]
+    ' @return {roSGNodePromise}
     function onThen(promise as dynamic, callback = promises.internal.defaultThenCallback as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("then", promise, callback, context)
     end function
 
     ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
+    '
+    ' @param {roSGNodePromise} promise
+    ' @param {Function} [callback=promises.internal.defaultThenCallback]
+    ' @param {object} [context="__INVALID__"]
+    ' @return {roSGNodePromise}
     function onCatch(promise as dynamic, callback = promises.internal.defaultCatchCallback as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("catch", promise, callback, context)
     end function
 
     ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
+    ' @param {roSGNodePromise} promise
+    ' @param {Function} [callback=promises.internal.defaultThenCallback]
+    ' @param {object} [context="__INVALID__"]
+    ' @return {roSGNodePromise}
     function onFinally(promise as dynamic, callback = promises.internal.defaultFinallyCallback as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("finally", promise, callback, context)
     end function
@@ -53,6 +68,9 @@ namespace promises
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when all of the input's promises fulfill (including when an empty array is passed), with an array of the fulfillment values.
     ' It rejects when any of the input's promises rejects, with this first rejection reason.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function all(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -89,7 +107,7 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, { state: state, index: i })
+                    end sub, {state: state, index: i})
 
                     promises.onCatch(promise, sub(error as dynamic, state as dynamic)
                         ' This shouldn't happen but if we somehow get a rejected promise after
@@ -137,6 +155,9 @@ namespace promises
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when all of the input's promises settle (including when an empty array is passed),
     ' with an array of objects that describe the outcome of each promise.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function allSettled(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -163,7 +184,7 @@ namespace promises
                         if not context.state.done then
                             ' Always assign the result to the origin index so results are in the same
                             ' order as the supplied promiseArray
-                            context.state.results[context.index] = { status: promises.PromiseState.resolved, value: result }
+                            context.state.results[context.index] = {status: promises.PromiseState.resolved, value: result}
                             context.state.resolvedCount++
 
                             if context.state.resolvedCount = context.state.total then
@@ -173,7 +194,7 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, { state: state, index: i })
+                    end sub, {state: state, index: i})
 
                     promises.onCatch(promise, sub(error as dynamic, context as dynamic)
                         ' Do not process any promises that come in late
@@ -181,7 +202,7 @@ namespace promises
                         if not context.state.done then
                             ' Always assign the result to the origin index so results are in the same
                             ' order as the supplied promiseArray
-                            context.state.results[context.index] = { status: promises.PromiseState.rejected, reason: error }
+                            context.state.results[context.index] = {status: promises.PromiseState.rejected, reason: error}
                             context.state.resolvedCount++
 
                             if context.state.resolvedCount = context.state.total then
@@ -191,11 +212,11 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, { state: state, index: i })
+                    end sub, {state: state, index: i})
                 else
                     ' The value in the promise array is not a promise.
                     ' Immediately set the result.
-                    state.results[i] = { status: promises.PromiseState.resolved, value: promise }
+                    state.results[i] = {status: promises.PromiseState.resolved, value: promise}
                     state.resolvedCount++
 
                     if state.resolvedCount = state.total then
@@ -226,6 +247,9 @@ namespace promises
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when any of the input's promises fulfills, with this first fulfillment value.
     ' It rejects when all of the input's promises reject (including when an empty array is passed), with an AggregateError containing an array of rejection reasons.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function any(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -274,13 +298,13 @@ namespace promises
                                     ' Resolve the deferred and make the state as complete
                                     context.state.done = true
                                     try
-                                        throw { message: "All promises were rejected", errors: context.state.errors }
+                                        throw {message: "All promises were rejected", errors: context.state.errors}
                                     catch e
                                         promises.reject(e, context.state.deferred)
                                     end try
                                 end if
                             end if
-                        end sub, { state: state, index: i })
+                        end sub, {state: state, index: i})
                     end if
                 else
                     ' The value in the promise array is not a promise.
@@ -294,7 +318,7 @@ namespace promises
         else
             ' We can't resolve with a promise if there are no promises to resolve
             try
-                throw { message: "All promises were rejected", errors: [] }
+                throw {message: "All promises were rejected", errors: []}
             catch e
                 promises.reject(e, deferred)
             end try
@@ -305,6 +329,9 @@ namespace promises
 
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise settles with the eventual state of the first promise that settles.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function race(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -362,7 +389,7 @@ namespace promises
         else
             ' We can't resolve with a promise if there are no promises to resolve
             try
-                throw { message: "All promises were rejected", errors: [] }
+                throw {message: "All promises were rejected", errors: []}
             catch e
                 promises.reject(e, deferred)
             end try
@@ -371,6 +398,10 @@ namespace promises
         return deferred
     end function
 
+    '
+    ' @param {dynamic} result
+    ' @param {roSGNodePromise} [promise=invalid]
+    ' @return {roSGNodePromise}
     function resolve(result as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
             promise = promises.create()
@@ -379,15 +410,19 @@ namespace promises
             ' console.trace("[promises.resolve]", promise.id)
             if type(result) = "roAssociativeArray" then
                 promise.removeField("promiseResult")
-                promise.addFields({ promiseResult: result })
+                promise.addFields({promiseResult: result})
             else
-                promise.update({ promiseResult: result }, true)
+                promise.update({promiseResult: result}, true)
             end if
             promise.promiseState = promises.PromiseState.resolved
         end if
         return promise
     end function
 
+    '
+    ' @param {dynamic} error
+    ' @param {roSGNodePromise} [promise=invalid]
+    ' @return {roSGNodePromise}
     function reject(error as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
             promise = promises.create()
@@ -396,15 +431,19 @@ namespace promises
             ' console.trace("[promises.reject]", promise.id)
             if type(error) = "roAssociativeArray" then
                 promise.removeField("promiseResult")
-                promise.addFields({ promiseResult: error })
+                promise.addFields({promiseResult: error})
             else
-                promise.update({ promiseResult: error }, true)
+                promise.update({promiseResult: error}, true)
             end if
             promise.promiseState = promises.PromiseState.rejected
         end if
         return promise
     end function
 
+    '
+    '
+    ' @param {roSGNodePromise} promise
+    ' @return {boolean}
     function isComplete(promise as object) as boolean
         if not promises.isPromise(promise) then return false
         state = promise.promiseState
@@ -417,6 +456,9 @@ namespace promises
     ' - the SubType exactly equals "Promise"
     ' - the subtype ends with "_promise" case insensitive
     ' - the node has a field called "promiseState"
+    '
+    ' @param {dynamic} promise
+    ' @return {boolean}
     function isPromise(promise as dynamic) as boolean
         if not type(promise) = "roSGNode" then
             return false
@@ -450,7 +492,18 @@ namespace promises
         end for
     end sub
 
+    interface PromiseChain
+        function then(callback as function) as PromiseChain
+        function catch(callback as function) as PromiseChain
+        function finally(callback as function) as PromiseChain
+        function toPromise() as roSGNodePromise
+    end interface
+
     'Allows chaining multiple promise operations in a row in a clean syntax
+    '
+    ' @param {roSGNodePromise} initialPromise
+    ' @param {object} [context="__INVALID__"]
+    ' @return {PromiseChain}
     function chain(initialPromise as object, context = "__INVALID__" as object) as object
         return {
             _lastPromise: initialPromise
@@ -477,6 +530,9 @@ namespace promises
     end function
 
     ' Makes sure the value supplied is a promise
+    '
+    ' @param {object} value
+    ' @return {roSGNodePromise}
     function ensurePromise(value as object) as object
         if promises.isPromise(value) then return value
         return promises.resolve(value)
@@ -500,7 +556,7 @@ namespace promises.configuration
         globalNode = m.global
         if type(globalNode) = "roSGNode" then
             if enabled then
-                globalNode.update({ __promises__crashLoggingEnabled: enabled }, true)
+                globalNode.update({__promises__crashLoggingEnabled: enabled}, true)
             else
                 globalNode.removeField("__promises__crashLoggingEnabled")
             end if
@@ -553,7 +609,7 @@ namespace promises.internal
                 'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
                 promises.internal.delay(sub(context)
                     promises.internal.notifyListeners(context.event)
-                end sub, { event: event })
+                end sub, {event: event})
             end sub)
 
             storage = {
@@ -586,7 +642,7 @@ namespace promises.internal
             if promiseState = promises.PromiseState.resolved or promiseState = promises.PromiseState.rejected then
                 promises.internal.delay(sub (details as object)
                     details.promise.promiseState = details.promiseState
-                end sub, { promise: promise, promiseState: promiseState })
+                end sub, {promise: promise, promiseState: promiseState})
             end if
             #if PROMISES_DEBUG
                 print "[promises.watch]", newPromise.id, "is watching", promise.id, eventName
@@ -833,7 +889,7 @@ namespace promises.internal
     ' @param {Float} [duration] - the amount of delay before invoking the callback
     sub delay(callback as function, context as dynamic, duration = 0.0001 as float)
         timer = createObject("roSGNode", "Timer")
-        timer.update({ duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid() }, true)
+        timer.update({duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid()}, true)
 
         m[timer.id] = {
             timer: timer
