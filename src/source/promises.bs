@@ -425,9 +425,10 @@ namespace promises
         return promise
     end function
 
+    ' Takes a value to reject on a promise. If no promise is supplied the value will be wrapped with a new promise.
     '
-    ' @param {dynamic} error
-    ' @param {roSGNodePromise} [promise=invalid]
+    ' @param {dynamic} error - the reason the promise was rejected. Typically an exception object.
+    ' @param {roSGNodePromise} [promise] - the promise to be rejected. If not promise is supplied a new promise will be created with the supplied error
     ' @return {roSGNodePromise}
     function reject(error as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
