@@ -27,8 +27,8 @@ namespace promises
     ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
     '
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultThenCallback]
-    ' @param {object} [context="__INVALID__"]
+    ' @param {Function} [callback] - The function to be invoked when the promise resolves. This function takes a dynamic result as the first parameter and if a context was supplied a dynamic context as the second parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
     function onThen(promise as dynamic, callback = promises.internal.defaultThenCallback as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("then", promise, callback, context)
