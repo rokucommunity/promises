@@ -3,7 +3,7 @@
 
 namespace promises
     ' Create a new promise
-    ' @return {roSGNodePromise }
+    ' @return {roSGNodePromise}
     function create() as dynamic
         'create a unique ID for this promise
         id = "promise-" + promises.internal.createUuid()
