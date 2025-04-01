@@ -1,5 +1,12 @@
 ' @rokucommunity/promises ${VERSION_NUMBER}
+
+' Enable verbose debugging of the promises library
 #const PROMISES_DEBUG = false
+
+' Enable the generation of a stack trace when a callback is registered for a promise
+' This can later be used to find the registration location of the promise in
+' the code. This is useful for debugging promise chains that are not working as expected.
+#const PROMISES_SAVE_LISTER_REGISTRATION_LOCATION = false
 
 namespace promises
     ' Create a new promise
@@ -13,9 +20,6 @@ namespace promises
             end if
             m.__promises__idSequence++
             id = "promise-" + m.__promises__idSequence.ToStr()
-        #end if
-
-        #if PROMISES_DEBUG
             print "[promises.create]", id
         #end if
         node = createObject("roSGNode", "Promise")
@@ -573,12 +577,22 @@ namespace promises.internal
     '
     function on(eventName as string, promise as dynamic, callback as function, context = {} as object) as dynamic
         if promises.isPromise(promise) then
+            registryLocation = {}
+            #IF PROMISES_SAVE_LISTER_REGISTRATION_LOCATION
+                ' create a new error to get the stack trace
+                try
+                    throw "Registering listener for promise"
+                catch error
+                    registryLocation = error
+                end try
+            #END IF
             newPromise = promises.create()
             storage = promises.internal.getPromiseStorage(promise)
             storage[eventName + "Listeners"].push({
                 callback: callback
                 context: context
                 promise: newPromise
+                registryLocation: registryLocation
             })
 
             promiseState = promise.promiseState
@@ -699,7 +713,11 @@ namespace promises.internal
                         catch error
                             file = error.backtrace.peek()
                             if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #IF PROMISES_SAVE_LISTER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registryLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #ELSE
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #END IF
                                 callbackResult = callback(promiseValue)
                             else
                                 promises.internal.logCrashIfEnabled(error)
@@ -720,7 +738,11 @@ namespace promises.internal
                         catch error
                             file = error.backtrace.peek()
                             if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #IF PROMISES_SAVE_LISTER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registryLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #ELSE
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #END IF
                                 callbackResult = callback()
                             else
                                 promises.internal.logCrashIfEnabled(error)
