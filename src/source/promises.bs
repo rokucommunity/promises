@@ -447,7 +447,7 @@ namespace promises
         return promise
     end function
 
-    '
+    ' Checks if a promise if resolved or rejected. 
     '
     ' @param {roSGNodePromise} promise
     ' @return {boolean}
