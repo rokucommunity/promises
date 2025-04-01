@@ -46,8 +46,9 @@ namespace promises
 
     ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultThenCallback]
-    ' @param {object} [context="__INVALID__"]
+```suggestion
+    ' @param {Function} [callback] - The function to be invoked when the promise resolves or rejects. If a context was supplied this function takes a dynamic context as the first parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
     function onFinally(promise as dynamic, callback = promises.internal.defaultFinallyCallback as function, context = "__INVALID__" as object) as dynamic
         return promises.internal.on("finally", promise, callback, context)
