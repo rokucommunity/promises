@@ -42,6 +42,7 @@ namespace promises
     ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
     function onCatch(promise as dynamic, callback = promises.internal.defaultCatchCallback as function, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
         return promises.internal.on("catch", promise, callback, context)
     end function
 
