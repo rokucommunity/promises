@@ -508,8 +508,8 @@ namespace promises
 
     'Allows chaining multiple promise operations in a row in a clean syntax
     '
-    ' @param {roSGNodePromise} initialPromise
-    ' @param {object} [context="__INVALID__"]
+    ' @param {roSGNodePromise} initialPromise - The first promise to then chain off of
+    ' @param {object} [context] - A value used to store state across callbacks within this chain; passed by value for primitives and by reference for objects (never cloned)
     ' @return {PromiseChain}
     function chain(initialPromise as object, context = "__INVALID__" as object) as object
         return {
