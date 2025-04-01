@@ -403,9 +403,10 @@ namespace promises
         return deferred
     end function
 
+    ' Takes a value to resolve on a promise. If no promise is supplied the value will be wrapped with a new promise.
     '
-    ' @param {dynamic} result
-    ' @param {roSGNodePromise} [promise=invalid]
+    ' @param {dynamic} result - The final value from the promise work
+    ' @param {roSGNodePromise} [promise] - A promise to resolve with the supplied result
     ' @return {roSGNodePromise}
     function resolve(result as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
