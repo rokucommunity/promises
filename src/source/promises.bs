@@ -46,7 +46,8 @@ namespace promises
         return promises.internal.on("catch", promise, callback, context)
     end function
 
-    ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise completion regardless of resolved or rejected status. 
+    '
     ' @param {roSGNodePromise} promise
 ```suggestion
     ' @param {Function} [callback] - The function to be invoked when the promise resolves or rejects. If a context was supplied this function takes a dynamic context as the first parameter.
