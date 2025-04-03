@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - master
-    tags:
-      - v*
   pull_request:
 env:
   NODE_VERSION: "18.15.0"
@@ -26,44 +24,3 @@ jobs:
       - run: npm ci --cache .npm
       - run: npm run build
       - run: npm run test
-  npm-release:
-    #only run this task for version-tagged releases
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: ci
-    runs-on: ubuntu-latest
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-    steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-node@master
-        with:
-          node-version: "18.15.0"
-      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ./.npmrc
-      - run: npm ci
-
-      # Make the promises.zip, remove promises_ prefix in prep for ropm publishing
-      - name: Build project, prepare github release, prepare for npm/ropm release
-        run: npm run preversion
-
-      #create GitHub release
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      #upload package to GitHub release
-      - name: Upload GitHub Release Assets (./dist code)
-        uses: alexellis/upload-assets@0.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          asset_paths: '["promises.zip", "./*.tgz"]'
-
-      # publish to npm
-      - run: npm publish
