@@ -3,6 +3,9 @@
         "**/*",
         "!**/*.spec.bs"
     ],
+    "plugins": [
+        "@rokucommunity/bslint"
+    ],
     "rootDir": "./src",
     "stagingDir": "./dist",
     "emitDefinitions": true,

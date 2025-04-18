@@ -43,5 +43,8 @@
   "bugs": {
     "url": "https://github.com/rokucommunity/promise/issues"
   },
-  "homepage": "https://github.com/rokucommunity/promise#readme"
+  "homepage": "https://github.com/rokucommunity/promise#readme",
+  "dependencies": {
+    "@rokucommunity/bslint": "^0.8.28"
+  }
 }
