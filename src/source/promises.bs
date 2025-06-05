@@ -553,9 +553,9 @@ namespace promises.internal
         if storage = invalid then
             ' unregister any observers on the promise to prevent multiple callbacks
             promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
-            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event)
+            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event as dynamic)
                 'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
-                promises.internal.delay(sub(context)
+                promises.internal.delay(sub(context as dynamic)
                     promises.internal.notifyListeners(context.event)
                 end sub, { event: event })
             end sub)
@@ -828,15 +828,15 @@ namespace promises.internal
         end if
     end sub
 
-    function defaultThenCallback(value = invalid, _ = invalid) as dynamic
+    function defaultThenCallback(value = invalid as dynamic, _ = invalid as dynamic) as dynamic
         return value
     end function
 
-    function defaultCatchCallback(value = invalid, _ = invalid) as dynamic
+    function defaultCatchCallback(value = invalid as dynamic, _ = invalid as dynamic) as dynamic
         return promises.reject(value)
     end function
 
-    sub defaultFinallyCallback(_ = invalid)
+    sub defaultFinallyCallback(_ = invalid as dynamic)
     end sub
 
     '
@@ -887,7 +887,7 @@ namespace promises.internal
     ' @param {String} field - The name of the field to be monitored.
     ' @param {Dynamic} callback - The name or message port to be executed when the value of the field changes.
     ' @return true if field could be observed, false if not
-    function observeFieldScoped(node as object, field as string, callback as dynamic, infoFields = [] as object)
+    function observeFieldScoped(node as object, field as string, callback as dynamic, infoFields = [] as object) as boolean
         if not type(node) = "roSGNode" then
             return false
         else
@@ -905,7 +905,7 @@ namespace promises.internal
     ' @param {roSGNode} node - The node to remove the observer from
     ' @param {String} field - The name of the field to no longer be monitored.
     ' @return true if field could be unobserved, false if not
-    function unobserveFieldScoped(node as object, field as string)
+    function unobserveFieldScoped(node as object, field as string) as boolean
         if not type(node) = "roSGNode" then
             return false
         else
@@ -1040,7 +1040,7 @@ namespace promises.internal
                                 result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28])
                             end if
                         else ' 30-32 args
-                            if (argsCount = 30) then ' 30 args
+                            if argsCount = 30 then ' 30 args
                                 result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29])
                             else if argsCount = 31 then ' 31 args
                                 result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29], args[30])

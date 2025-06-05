@@ -9,7 +9,8 @@
     "build": "bsc",
     "build-tests": "bsc --project bsconfig.tests.json",
     "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
-    "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts"
+    "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts",
+    "package": "npm run build && npm pack"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
@@ -43,5 +44,8 @@
   "bugs": {
     "url": "https://github.com/rokucommunity/promise/issues"
   },
-  "homepage": "https://github.com/rokucommunity/promise#readme"
+  "homepage": "https://github.com/rokucommunity/promise#readme",
+  "dependencies": {
+    "@rokucommunity/bslint": "^0.8.28"
+  }
 }
