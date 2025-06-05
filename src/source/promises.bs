@@ -577,7 +577,7 @@ namespace promises.internal
     '
     function on(eventName as string, promise as dynamic, callback as function, context = {} as object) as dynamic
         if promises.isPromise(promise) then
-            registrationLocation = {}
+            registrationLocation = invalid
             #if PROMISES_SAVE_LISTER_REGISTRATION_LOCATION
                 ' create a new error to get the stack trace
                 try
