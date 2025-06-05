@@ -14,7 +14,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
     "@types/node": "^20.6.0",
-    "brighterscript": "^0.69.4",
+    "brighterscript": "^0.67.4",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
     "roku-deploy": "^3.10.3",
