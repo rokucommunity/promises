@@ -46,10 +46,9 @@ namespace promises
         return promises.internal.on("catch", promise, callback, context)
     end function
 
-    ' Used to register a callback on promise completion regardless of resolved or rejected status. 
+    ' Used to register a callback on promise completion regardless of resolved or rejected status.
     '
     ' @param {roSGNodePromise} promise
-```suggestion
     ' @param {Function} [callback] - The function to be invoked when the promise resolves or rejects. If a context was supplied this function takes a dynamic context as the first parameter.
     ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
@@ -112,7 +111,7 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, {state: state, index: i})
+                    end sub, { state: state, index: i })
 
                     promises.onCatch(promise, sub(error as dynamic, state as dynamic)
                         ' This shouldn't happen but if we somehow get a rejected promise after
@@ -189,7 +188,7 @@ namespace promises
                         if not context.state.done then
                             ' Always assign the result to the origin index so results are in the same
                             ' order as the supplied promiseArray
-                            context.state.results[context.index] = {status: promises.PromiseState.resolved, value: result}
+                            context.state.results[context.index] = { status: promises.PromiseState.resolved, value: result }
                             context.state.resolvedCount++
 
                             if context.state.resolvedCount = context.state.total then
@@ -199,7 +198,7 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, {state: state, index: i})
+                    end sub, { state: state, index: i })
 
                     promises.onCatch(promise, sub(error as dynamic, context as dynamic)
                         ' Do not process any promises that come in late
@@ -207,7 +206,7 @@ namespace promises
                         if not context.state.done then
                             ' Always assign the result to the origin index so results are in the same
                             ' order as the supplied promiseArray
-                            context.state.results[context.index] = {status: promises.PromiseState.rejected, reason: error}
+                            context.state.results[context.index] = { status: promises.PromiseState.rejected, reason: error }
                             context.state.resolvedCount++
 
                             if context.state.resolvedCount = context.state.total then
@@ -217,11 +216,11 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, {state: state, index: i})
+                    end sub, { state: state, index: i })
                 else
                     ' The value in the promise array is not a promise.
                     ' Immediately set the result.
-                    state.results[i] = {status: promises.PromiseState.resolved, value: promise}
+                    state.results[i] = { status: promises.PromiseState.resolved, value: promise }
                     state.resolvedCount++
 
                     if state.resolvedCount = state.total then
@@ -303,13 +302,13 @@ namespace promises
                                     ' Resolve the deferred and make the state as complete
                                     context.state.done = true
                                     try
-                                        throw {message: "All promises were rejected", errors: context.state.errors}
+                                        throw { message: "All promises were rejected", errors: context.state.errors }
                                     catch e
                                         promises.reject(e, context.state.deferred)
                                     end try
                                 end if
                             end if
-                        end sub, {state: state, index: i})
+                        end sub, { state: state, index: i })
                     end if
                 else
                     ' The value in the promise array is not a promise.
@@ -323,7 +322,7 @@ namespace promises
         else
             ' We can't resolve with a promise if there are no promises to resolve
             try
-                throw {message: "All promises were rejected", errors: []}
+                throw { message: "All promises were rejected", errors: [] }
             catch e
                 promises.reject(e, deferred)
             end try
@@ -394,7 +393,7 @@ namespace promises
         else
             ' We can't resolve with a promise if there are no promises to resolve
             try
-                throw {message: "All promises were rejected", errors: []}
+                throw { message: "All promises were rejected", errors: [] }
             catch e
                 promises.reject(e, deferred)
             end try
@@ -416,9 +415,9 @@ namespace promises
             ' console.trace("[promises.resolve]", promise.id)
             if type(result) = "roAssociativeArray" then
                 promise.removeField("promiseResult")
-                promise.addFields({promiseResult: result})
+                promise.addFields({ promiseResult: result })
             else
-                promise.update({promiseResult: result}, true)
+                promise.update({ promiseResult: result }, true)
             end if
             promise.promiseState = promises.PromiseState.resolved
         end if
@@ -438,16 +437,16 @@ namespace promises
             ' console.trace("[promises.reject]", promise.id)
             if type(error) = "roAssociativeArray" then
                 promise.removeField("promiseResult")
-                promise.addFields({promiseResult: error})
+                promise.addFields({ promiseResult: error })
             else
-                promise.update({promiseResult: error}, true)
+                promise.update({ promiseResult: error }, true)
             end if
             promise.promiseState = promises.PromiseState.rejected
         end if
         return promise
     end function
 
-    ' Checks if a promise if resolved or rejected. 
+    ' Checks if a promise if resolved or rejected.
     '
     ' @param {roSGNodePromise} promise
     ' @return {boolean}
@@ -563,7 +562,7 @@ namespace promises.configuration
         globalNode = m.global
         if type(globalNode) = "roSGNode" then
             if enabled then
-                globalNode.update({__promises__crashLoggingEnabled: enabled}, true)
+                globalNode.update({ __promises__crashLoggingEnabled: enabled }, true)
             else
                 globalNode.removeField("__promises__crashLoggingEnabled")
             end if
@@ -616,7 +615,7 @@ namespace promises.internal
                 'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
                 promises.internal.delay(sub(context)
                     promises.internal.notifyListeners(context.event)
-                end sub, {event: event})
+                end sub, { event: event })
             end sub)
 
             storage = {
@@ -649,7 +648,7 @@ namespace promises.internal
             if promiseState = promises.PromiseState.resolved or promiseState = promises.PromiseState.rejected then
                 promises.internal.delay(sub (details as object)
                     details.promise.promiseState = details.promiseState
-                end sub, {promise: promise, promiseState: promiseState})
+                end sub, { promise: promise, promiseState: promiseState })
             end if
             #if PROMISES_DEBUG
                 print "[promises.watch]", newPromise.id, "is watching", promise.id, eventName
@@ -896,7 +895,7 @@ namespace promises.internal
     ' @param {Float} [duration] - the amount of delay before invoking the callback
     sub delay(callback as function, context as dynamic, duration = 0.0001 as float)
         timer = createObject("roSGNode", "Timer")
-        timer.update({duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid()}, true)
+        timer.update({ duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid() }, true)
 
         m[timer.id] = {
             timer: timer
