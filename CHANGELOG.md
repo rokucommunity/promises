@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.4](https://github.com/rokucommunity/promises/compare/0.6.3...v0.6.4) - 2025-06-09
+### Added
+ - Add linting ([#42](https://github.com/rokucommunity/promises/pull/42))
+ - added [@rokucommunity/bslint@0.8.32](https://github.com/rokucommunity/bslint)
+ - added [brighterscript@0.69.10](https://github.com/rokucommunity/brighterscript)
+ - added [roku-deploy@3.12.6](https://github.com/rokucommunity/roku-deploy)
+ - added [rooibos-roku@5.15.7](https://github.com/rokucommunity/rooibos)
+### Changed
+ - Shared CI Support Prerelease ([#43](https://github.com/rokucommunity/promises/pull/43))
+ - Migrate to Shared CI ([#41](https://github.com/rokucommunity/promises/pull/41))
+ - Update the demo with the latest code ([#37](https://github.com/rokucommunity/promises/pull/37))
+### Fixed
+ - Fix bug in preprocessing script that missed some default arg prefixing ([#47](https://github.com/rokucommunity/promises/pull/47))
+ - Fix wrong error message when missing context and add listener location debugging ([#40](https://github.com/rokucommunity/promises/pull/40))
+ - Fixed an issue where the LSP was not detecting the demo folder as a project ([#38](https://github.com/rokucommunity/promises/pull/38))
+
+
+
 ## [0.6.3](https://github.com/rokucommunity/promises/compare/v0.6.2...0.6.3) - 2025-03-26
 ### Fixed
  - Issue that resulted in needing bslib as a dependancy ([#36](https://github.com/rokucommunity/promises/pull/36))
