@@ -13,6 +13,7 @@
     "package": "npm run build && npm pack"
   },
   "devDependencies": {
+    "@rokucommunity/bslint": "^0.8.32",
     "@types/fs-extra": "^11.0.1",
     "@types/node": "^20.6.0",
     "brighterscript": "^0.69.10",
@@ -44,8 +45,5 @@
   "bugs": {
     "url": "https://github.com/rokucommunity/promise/issues"
   },
-  "homepage": "https://github.com/rokucommunity/promise#readme",
-  "dependencies": {
-    "@rokucommunity/bslint": "^0.8.32"
-  }
+  "homepage": "https://github.com/rokucommunity/promise#readme"
 }
