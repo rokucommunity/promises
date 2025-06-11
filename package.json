@@ -10,7 +10,7 @@
     "build-tests": "bsc --project bsconfig.tests.json",
     "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts",
-    "package": "npm run build && npm pack"
+    "package": "npm run build && npm run prepare-releases && npm pack"
   },
   "devDependencies": {
     "@rokucommunity/bslint": "^0.8.32",
