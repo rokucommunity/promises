@@ -87,8 +87,6 @@ function run() {
 try {
     run();
     console.log('\n\ntest package script completed successfully');
-} catch (e) {
-    console.error(e);
 } finally {
     if (!process.argv.includes('--noclean')) {
         fsExtra.removeSync(tempDir);
