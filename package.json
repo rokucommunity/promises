@@ -9,6 +9,7 @@
     "build": "bsc",
     "build-tests": "bsc --project bsconfig.tests.json",
     "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
+    "test-package": "npx ts-node ./scripts/test-package.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts",
     "package": "npm run build && npm run prepare-releases && npm pack"
   },
@@ -21,6 +22,8 @@
     "fs-extra": "^11.1.1",
     "roku-deploy": "^3.12.6",
     "rooibos-roku": "^5.15.7",
+    "ropm": "^0.10.34",
+    "semver": "^7.7.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },
