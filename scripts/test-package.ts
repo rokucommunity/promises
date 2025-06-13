@@ -58,7 +58,17 @@ function run() {
 
     //create a brighterscript project that uses the stuff from promises
     fsExtra.outputJsonSync(`${testProjectDir}/bsconfig.json`, {
-        rootDir: testProjectDir
+        rootDir: testProjectDir,
+        createPackage: false,
+        diagnosticFilters: [
+            //temporarily disable the "cannot find name" error since ropm has a bug with that...
+            {
+                "src": "source/roku_modules/**/*.bs",
+                "codes": [
+                    1001
+                ]
+            },
+        ]
     });
     fsExtra.outputFileSync(`${testProjectDir}/source/main.bs`, `
         import "pkg:/source/roku_modules/rokucommunity_promises/promises.brs"
