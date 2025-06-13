@@ -24,3 +24,4 @@ jobs:
       - run: npm ci --cache .npm
       - run: npm run build
       - run: npm run test
+      - run: npm run test-package
