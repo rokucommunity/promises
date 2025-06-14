@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.6](https://github.com/rokucommunity/promises/compare/0.6.5...v0.6.6) - 2025-06-14
+### Fixed
+ - bug in publishing flow that wasn't properly preparing the package for npm publishing ([#](https://github.com/rokucommunity/promises/pull/52))
+
+
+
 ## [0.6.5](https://github.com/rokucommunity/promises/compare/0.6.4...v0.6.5) - 2025-06-10
 ### Changed
  - Change bslint to a devDependency ([#50](https://github.com/rokucommunity/promises/pull/50))
