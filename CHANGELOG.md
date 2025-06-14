@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [0.6.6](https://github.com/rokucommunity/promises/compare/0.6.5...v0.6.6) - 2025-06-14
-### Added
- - added [ropm@0.10.34](https://github.com/rokucommunity/ropm)
+### Fixed
+ - bug in publishing flow that wasn't properly preparing the package for npm publishing ([#](https://github.com/rokucommunity/promises/pull/52))
 
 
 
