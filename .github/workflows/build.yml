@@ -9,7 +9,7 @@ env:
 
 jobs:
   ci:
-    runs-on: self-hosted
+    runs-on: [self-hosted, roku-11.5, enabled]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@master
