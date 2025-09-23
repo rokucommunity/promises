@@ -1,6 +1,6 @@
 # Promises
 
-A Promise-like implementation for BrightScript/Roku. This is the core functionality for BrighterScript's async/await functionality. Not to be confused with [roku-promises](https://github.com/rokucommunity/roku-promises).
+A Promise-like implementation for BrightScript/Roku. This is the core functionality for BrighterScript's async/await functionality. Not to be confused with [roku-promise](https://github.com/rokucommunity/roku-promise).
 
 [![build status](https://img.shields.io/github/actions/workflow/status/rokucommunity/promises/build.yml?branch=master&logo=github)](https://github.com/rokucommunity/promises/actions?query=branch%3Amaster+workflow%3Abuild)
 [![coverage status](https://img.shields.io/coveralls/github/rokucommunity/promises?logo=coveralls)](https://coveralls.io/github/rokucommunity/promises?branch=master)
