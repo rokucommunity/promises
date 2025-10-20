@@ -6,6 +6,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.7](https://github.com/rokucommunity/promises/compare/0.6.6...v0.6.7) - 2025-10-20
+### Changed
+ - upgrade to [@rokucommunity/bslint@0.8.37](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0837---2025-10-16). Notable changes since 0.8.32:
+     - Ignore unused parameters if they begin with leading underscore ([#165](https://github.com/rokucommunity/promises/pull/165))
+     - Identify unused function parameters ([#163](https://github.com/rokucommunity/promises/pull/163))
+     - chore: Support dispatch workflows ([#158](https://github.com/rokucommunity/promises/pull/158))
+ - upgrade to [brighterscript@0.70.2](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0702---2025-10-10). Notable changes since 0.69.10:
+     - Add manual entries for roUtils and roRenderThreadQueue ([#1574](https://github.com/rokucommunity/promises/pull/1574))
+     - Roku sdk updates ([#1573](https://github.com/rokucommunity/promises/pull/1573))
+     - Flag param names that are reserved words ([#1556](https://github.com/rokucommunity/promises/pull/1556))
+     - Fix for adding files on beforeProgramValidate ([#1568](https://github.com/rokucommunity/promises/pull/1568))
+     - Fix typdef generation of default param func ([#1551](https://github.com/rokucommunity/promises/pull/1551))
+     - Support transpiling class methods as named functions ([#1548](https://github.com/rokucommunity/promises/pull/1548))
+     - chore: update regex-literal docs about escaping the forward slash ([#1549](https://github.com/rokucommunity/promises/pull/1549))
+     - Add projectDiscoveryExclude setting and files.watcherExclude support ([#1535](https://github.com/rokucommunity/promises/pull/1535))
+     - Fix signature help crash on malformed function declarations ([#1536](https://github.com/rokucommunity/promises/pull/1536))
+     - Add max depth configuration for Roku project discovery ([#1533](https://github.com/rokucommunity/promises/pull/1533))
+     - chore: Add copilot files ([#1534](https://github.com/rokucommunity/promises/pull/1534))
+     - Fix discovery when `projects` is empty ([#1529](https://github.com/rokucommunity/promises/pull/1529))
+     - Rename setting to `enableProjectDiscovery` ([#1525](https://github.com/rokucommunity/promises/pull/1525))
+     - Support projects array in settings ([#1521](https://github.com/rokucommunity/promises/pull/1521))
+     - Bump brace-expansion from 1.1.11 to 1.1.12 ([#1522](https://github.com/rokucommunity/promises/pull/1522))
+     - chore: Support dispatch workflows ([#1514](https://github.com/rokucommunity/promises/pull/1514))
+     - Add `enableDiscovery` language server option ([#1520](https://github.com/rokucommunity/promises/pull/1520))
+     - Improve manifests discovery ([#1518](https://github.com/rokucommunity/promises/pull/1518))
+     - Improve `bsconfig.json` auto-discovery ([#1512](https://github.com/rokucommunity/promises/pull/1512))
+     - Add some docs about ObserveField namespace caveats ([#1513](https://github.com/rokucommunity/promises/pull/1513))
+ - upgrade to [roku-deploy@3.13.0](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3130---2025-08-04). Notable changes since 3.12.6:
+     - chore: Support dispatch workflows ([#198](https://github.com/rokucommunity/promises/pull/198))
+     - Add standards-compliant User-Agent header ([#203](https://github.com/rokucommunity/promises/pull/203))
+ - upgrade to [ropm@0.11.1](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#0111---2025-10-10). Notable changes since 0.10.34:
+     - Bump brace-expansion from 1.1.11 to 1.1.12 ([#120](https://github.com/rokucommunity/promises/pull/120))
+     - Fix Issues with npm-ls ([#118](https://github.com/rokucommunity/promises/pull/118))
+     - Fix packageRootDir crash when directory doesn't exist ([#110](https://github.com/rokucommunity/promises/pull/110))
+     - Add support for the `create-package` label ([#111](https://github.com/rokucommunity/promises/pull/111))
+     - chore: Support dispatch workflows ([#107](https://github.com/rokucommunity/promises/pull/107))
+### Fixed
+ - Fix link to roku-promise in README.md ([#56](https://github.com/rokucommunity/promises/pull/56))
+
+
+
 ## [0.6.6](https://github.com/rokucommunity/promises/compare/0.6.5...v0.6.6) - 2025-06-14
 ### Fixed
  - bug in publishing flow that wasn't properly preparing the package for npm publishing ([#](https://github.com/rokucommunity/promises/pull/52))
