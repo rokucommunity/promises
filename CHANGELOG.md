@@ -7,55 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [0.6.7](https://github.com/rokucommunity/promises/compare/0.6.6...v0.6.7) - 2025-10-31
-### Changed
- - upgrade to [@rokucommunity/bslint@0.8.38](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0838---2025-10-31). Notable changes since 0.8.32:
-     - chore: support oidc ([#167](https://github.com/rokucommunity/bslint/pull/167))
-     - Ignore unused parameters if they begin with leading underscore ([#165](https://github.com/rokucommunity/bslint/pull/165))
-     - Identify unused function parameters ([#163](https://github.com/rokucommunity/bslint/pull/163))
-     - chore: Support dispatch workflows ([#158](https://github.com/rokucommunity/bslint/pull/158))
- - upgrade to [brighterscript@0.70.3](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0703---2025-10-31). Notable changes since 0.69.10:
-     - Fix crash when bsc plugin in worker loads another version of bsc ([#1579](https://github.com/rokucommunity/brighterscript/pull/1579))
-     - Fix recursive const and enum resolution during transpilation ([#1578](https://github.com/rokucommunity/brighterscript/pull/1578))
-     - chore: support OIDC for publishing ([#1582](https://github.com/rokucommunity/brighterscript/pull/1582))
-     - Add manual entries for roUtils and roRenderThreadQueue ([#1574](https://github.com/rokucommunity/brighterscript/pull/1574))
-     - Roku sdk updates ([#1573](https://github.com/rokucommunity/brighterscript/pull/1573))
-     - Flag param names that are reserved words ([#1556](https://github.com/rokucommunity/brighterscript/pull/1556))
-     - Fix for adding files on beforeProgramValidate ([#1568](https://github.com/rokucommunity/brighterscript/pull/1568))
-     - Fix typdef generation of default param func ([#1551](https://github.com/rokucommunity/brighterscript/pull/1551))
-     - Support transpiling class methods as named functions ([#1548](https://github.com/rokucommunity/brighterscript/pull/1548))
-     - chore: update regex-literal docs about escaping the forward slash ([#1549](https://github.com/rokucommunity/brighterscript/pull/1549))
-     - Add projectDiscoveryExclude setting and files.watcherExclude support ([#1535](https://github.com/rokucommunity/brighterscript/pull/1535))
-     - Fix signature help crash on malformed function declarations ([#1536](https://github.com/rokucommunity/brighterscript/pull/1536))
-     - Add max depth configuration for Roku project discovery ([#1533](https://github.com/rokucommunity/brighterscript/pull/1533))
-     - chore: Add copilot files ([#1534](https://github.com/rokucommunity/brighterscript/pull/1534))
-     - Fix discovery when `projects` is empty ([#1529](https://github.com/rokucommunity/brighterscript/pull/1529))
-     - Rename setting to `enableProjectDiscovery` ([#1525](https://github.com/rokucommunity/brighterscript/pull/1525))
-     - Support projects array in settings ([#1521](https://github.com/rokucommunity/brighterscript/pull/1521))
-     - Bump brace-expansion from 1.1.11 to 1.1.12 ([#1522](https://github.com/rokucommunity/brighterscript/pull/1522))
-     - chore: Support dispatch workflows ([#1514](https://github.com/rokucommunity/brighterscript/pull/1514))
-     - Add `enableDiscovery` language server option ([#1520](https://github.com/rokucommunity/brighterscript/pull/1520))
-     - Improve manifests discovery ([#1518](https://github.com/rokucommunity/brighterscript/pull/1518))
-     - Improve `bsconfig.json` auto-discovery ([#1512](https://github.com/rokucommunity/brighterscript/pull/1512))
-     - Add some docs about ObserveField namespace caveats ([#1513](https://github.com/rokucommunity/brighterscript/pull/1513))
- - upgrade to [roku-deploy@3.14.4](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3144---2025-10-30). Notable changes since 3.12.6:
-     - chore: Update package.json repository to support provenance ([#218](https://github.com/rokucommunity/roku-deploy/pull/218))
-     - Add specific error classes for reboot and check for updates functions ([#216](https://github.com/rokucommunity/roku-deploy/pull/216))
-     - Add pull-request write permissions ([#214](https://github.com/rokucommunity/roku-deploy/pull/214))
-     - Chore: Update publish-release permissions to content: write ([#213](https://github.com/rokucommunity/roku-deploy/pull/213))
-     - Add the OIDC permissions to the dispatching workflow ([#211](https://github.com/rokucommunity/roku-deploy/pull/211))
-     - Add 'rebootDevice' and 'checkForUpdate' functionality for supported OS versions ([#208](https://github.com/rokucommunity/roku-deploy/pull/208))
-     - chore: Support dispatch workflows ([#198](https://github.com/rokucommunity/roku-deploy/pull/198))
-     - Add standards-compliant User-Agent header ([#203](https://github.com/rokucommunity/roku-deploy/pull/203))
- - upgrade to [ropm@0.11.2](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#0112---2025-10-31). Notable changes since 0.10.34:
-     - chore: use OIDC for publishing ([#123](https://github.com/rokucommunity/ropm/pull/123))
-     - Bump brace-expansion from 1.1.11 to 1.1.12 ([#120](https://github.com/rokucommunity/ropm/pull/120))
-     - Fix Issues with npm-ls ([#118](https://github.com/rokucommunity/ropm/pull/118))
-     - Fix packageRootDir crash when directory doesn't exist ([#110](https://github.com/rokucommunity/ropm/pull/110))
-     - Add support for the `create-package` label ([#111](https://github.com/rokucommunity/ropm/pull/111))
-     - chore: Support dispatch workflows ([#107](https://github.com/rokucommunity/ropm/pull/107))
 ### Fixed
- - Fix issue with default function callbacks being incorrectly prefixed ([#58](https://github.com/rokucommunity/promises/pull/58))
- - Fix link to roku-promise in README.md ([#56](https://github.com/rokucommunity/promises/pull/56))
+ - issue with default function callbacks being incorrectly prefixed ([#58](https://github.com/rokucommunity/promises/pull/58))
+ - chore: fix link to roku-promise in README.md ([#56](https://github.com/rokucommunity/promises/pull/56))
 
 
 
