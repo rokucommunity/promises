@@ -8,6 +8,11 @@
 ' the code. This is useful for debugging promise chains that are not working as expected.
 #const PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION = false
 
+' When running in a task, do not delay promise resolution to the next tick
+' This is because the timer relies on the render thread to fire correctly.
+' Set to true to support creating and resolving promises in task threads.
+#const PROMISES_NO_DELAY_IN_TASK = false
+
 namespace promises
     ' Create a new promise
     function create() as dynamic
@@ -860,6 +865,21 @@ namespace promises.internal
     ' @param {Dynamic} context - a single item of data to be passed into the callback when invoked
     ' @param {Float} [duration] - the amount of delay before invoking the callback
     sub delay(callback as function, context as dynamic, duration = 0.0001 as float)
+        #if PROMISES_NO_DELAY_IN_TASK
+            threadInfo = m.top.threadInfo()
+            if threadInfo.currentThread.type = "Task" then
+                try
+                    callback(context)
+                catch e
+                    #if PROMISES_DEBUG
+                        print "Crash during utils.delay:", e
+                    #end if
+                    promises.internal.logCrashIfEnabled(e)
+                end try
+                return
+            end if
+        #end if
+
         timer = createObject("roSGNode", "Timer")
         timer.update({ duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid() }, true)
 
