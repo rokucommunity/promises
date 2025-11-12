@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.6.7](https://github.com/rokucommunity/promises/compare/0.6.6...v0.6.7) - 2025-10-31
+### Fixed
+ - Fix `repositoryUrl` ([529b745](https://github.com/rokucommunity/promises/commit/529b745))
+ - Fix issue with default function callbacks being incorrectly prefixed ([#58](https://github.com/rokucommunity/promises/pull/58))
+ - chore: fix link to roku-promise in README.md ([#56](https://github.com/rokucommunity/promises/pull/56))
+
+
+
 ## [0.6.6](https://github.com/rokucommunity/promises/compare/0.6.5...v0.6.6) - 2025-06-14
 ### Fixed
  - bug in publishing flow that wasn't properly preparing the package for npm publishing ([#](https://github.com/rokucommunity/promises/pull/52))
