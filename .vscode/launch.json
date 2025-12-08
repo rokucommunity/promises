@@ -9,17 +9,16 @@
             "preLaunchTask": "build-tests",
             "enableDebuggerAutoRecovery": true,
             "stopDebuggerOnAppExit": true,
-            "enableVariablesPanel": false,
             "injectRaleTrackerTask": false,
             "enableDebugProtocol": true
         }, {
             "name": "Demo App",
             "type": "brightscript",
             "request": "launch",
-            "rootDir": "${workspaceFolder}/demos/simple-brightscript",
+            "rootDir": "${workspaceFolder}/dist/demos/simple-brightscript",
+            "preLaunchTask": "build-demo-app",
             "enableDebuggerAutoRecovery": true,
             "stopDebuggerOnAppExit": true,
-            "enableVariablesPanel": false,
             "injectRaleTrackerTask": false,
             "rendezvousTracking": true,
             "enableDebugProtocol": true

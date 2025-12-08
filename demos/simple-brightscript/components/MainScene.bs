@@ -104,12 +104,12 @@ sub chainExample()
 end sub
 
 sub parallelExample()
-    promises = promises_all([
+    promiseArray = promises_all([
         getIpApiTimeZoneByDomain("google.com")
         getIpApiTimeZoneByDomain("netflix.com")
         getIpApiTimeZoneByDomain("chatgpt.com")
     ])
-    promises_chain(promises).then(function(timezones)
+    promises_chain(promiseArray).then(function(timezones)
         m.top.parallelResult = {
             result: [
                 "Google.com's timezone is " + timezones[0].timezone,
