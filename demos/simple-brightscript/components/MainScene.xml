@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="MainScene" extends="Scene">
-    <script type="text/brightscript" uri="MainScene.brs"/>
-    <script type="text/brightscript" uri="pkg:/source/promises.brs"/>
+    <script type="text/brightscript" uri="MainScene.bs"/>
+    <script type="text/brightscript" uri="pkg:/source/promises.bs"/>
     <interface>
         <field id="simpleResult" type="assocarray"/>
         <field id="chainResult" type="assocarray"/>
