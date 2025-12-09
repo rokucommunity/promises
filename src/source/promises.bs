@@ -492,7 +492,7 @@ namespace promises
         return promises.resolve(value)
     end function
 
-    sub runEventLoop(hostPort as object, callback as function) as void
+    sub runEventLoop(hostPort as object, callback as function, context = invalid as dynamic) as void
         initTaskFunctionality()
 
         while true
@@ -503,7 +503,11 @@ namespace promises
 
             hostMessage = wait(20, hostPort)
             if hostMessage <> invalid then
-                callback(hostMessage)
+                if context = invalid then
+                    callback(hostMessage)
+                else
+                    callback(hostMessage, context)
+                end if
             end if
         end while
     end sub
