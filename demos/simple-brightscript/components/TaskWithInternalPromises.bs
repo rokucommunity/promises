@@ -1,0 +1,27 @@
+sub init()
+    m.port = CreateObject("roMessagePort")
+    m.top.functionName = "startTask"
+end sub
+
+sub startTask()
+    promises.initTaskFunctionality()
+    promise = doNetworkRequest("http://ip-api.com/json/", "GET", {})
+    promises.chain(promise).then(function(response)
+        m.top.response = response
+    end function).catch(function(error)
+        print "Error in TaskWithInternalPromises:", error
+    end function)
+
+    promises.runEventLoop(m.port, sub(message)
+        print "Task with internal promises received message:", message
+    end sub)
+end sub
+
+
+function doNetworkRequest(url as string, method as string, body as object) as object
+    promise = promises_create()
+    promises.resolve({
+        "something": "OF VALUE"
+    }, promise)
+    return promise
+end function

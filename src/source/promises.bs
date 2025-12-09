@@ -492,6 +492,28 @@ namespace promises
         return promises.resolve(value)
     end function
 
+    sub runEventLoop(hostPort as object, callback as function) as void
+        initTaskFunctionality()
+
+        while true
+            promisesMessage = wait(20, m.__promises__promisesPort)
+            if promisesMessage <> invalid then
+                promises.internal.notifyListeners(promisesMessage)
+            end if
+
+            hostMessage = wait(20, hostPort)
+            if hostMessage <> invalid then
+                callback(hostMessage)
+            end if
+        end while
+    end sub
+
+    sub initTaskFunctionality()
+        if m.__promises__promisesPort = invalid then
+            m.__promises__promisesPort = createObject("roMessagePort")' No-op for compatibility with other environments
+        end if
+    end sub
+
     enum PromiseState
         pending = "pending"
         resolved = "resolved"
@@ -557,14 +579,18 @@ namespace promises.internal
 
         storage = m[id]
         if storage = invalid then
-            ' unregister any observers on the promise to prevent multiple callbacks
-            promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
-            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event as dynamic)
-                'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
-                promises.internal.delay(sub(context as dynamic)
-                    promises.internal.notifyListeners(context.event)
-                end sub, { event: event })
-            end sub)
+            if m.__promises__promisesPort <> invalid then
+                promise.observeFieldScoped(promises.internal.PromiseField.promiseState, m.__promises__promisesPort)
+            else
+                ' unregister any observers on the promise to prevent multiple callbacks
+                promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
+                promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event as dynamic)
+                    'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
+                    promises.internal.delay(sub(context as dynamic)
+                        promises.internal.notifyListeners(context.event)
+                    end sub, { event: event })
+                end sub)
+            end if
 
             storage = {
                 promise: promise
@@ -604,9 +630,13 @@ namespace promises.internal
             promiseState = promise.promiseState
             'trigger a change if the promise is already resolved
             if promiseState = promises.PromiseState.resolved or promiseState = promises.PromiseState.rejected then
-                promises.internal.delay(sub (details as object)
-                    details.promise.promiseState = details.promiseState
-                end sub, { promise: promise, promiseState: promiseState })
+                if m.__promises__promisesPort <> invalid then
+                    promise.promiseState = promiseState
+                else
+                    promises.internal.delay(sub (details as object)
+                        details.promise.promiseState = details.promiseState
+                    end sub, { promise: promise, promiseState: promiseState })
+                end if
             end if
             #if PROMISES_DEBUG
                 print "[promises.watch]", newPromise.id, "is watching", promise.id, eventName
@@ -669,9 +699,13 @@ namespace promises.internal
             if promises.internal.hasStorage(originalPromise) then
                 ' There were listeners added as a result of some of the callback notifications
                 ' Re-trigger the notification process for the new listeners
-                promises.internal.delay(sub (event as object)
+                if m.__promises__promisesPort <> invalid then
                     promises.internal.notifyListeners(event)
-                end sub, event)
+                else
+                    promises.internal.delay(sub (event as object)
+                        promises.internal.notifyListeners(event)
+                    end sub, event)
+                end if
             end if
         end if
     end sub
