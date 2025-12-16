@@ -4,7 +4,7 @@ sub init()
 end sub
 
 sub startTask()
-    promises.initTaskFunctionality()
+    promises.initTaskFunctionality(m.port)
     promise = doNetworkRequest("http://ip-api.com/json/", "GET", {})
     promises.chain(promise).then(function(response)
         m.top.response = response

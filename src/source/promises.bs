@@ -461,6 +461,14 @@ namespace promises
         return result
     end function
 
+    ' Determines if the given node event was triggered on a promise like node.
+    function isPromiseEvent(event as dynamic) as boolean
+        if not type(event) = "roSGNodeEvent" then
+            return false
+        end if
+        return lCase(event.getField()) = promises.internal.PromiseField.promiseStateLowerCase
+    end function
+
     ' Remove all promise storage from the current m
     sub clean()
         for each key in m
@@ -506,28 +514,27 @@ namespace promises
     end function
 
     sub runEventLoop(hostPort as object, callback as function, context = invalid as dynamic) as void
-        initTaskFunctionality()
+        initTaskFunctionality(hostPort)
 
         while true
-            promisesMessage = wait(20, m.__promises__promisesPort)
-            if promisesMessage <> invalid then
-                promises.internal.notifyListeners(promisesMessage)
-            end if
+            message = wait(0, hostPort)
+            if message = invalid then continue while
 
-            hostMessage = wait(20, hostPort)
-            if hostMessage <> invalid then
+            if promises.isPromiseEvent(message) then
+                promises.internal.notifyListeners(message)
+            else
                 if context = invalid then
-                    callback(hostMessage)
+                    callback(message)
                 else
-                    callback(hostMessage, context)
+                    callback(message, context)
                 end if
             end if
         end while
     end sub
 
-    sub initTaskFunctionality()
+    sub initTaskFunctionality(hostPort as object)
         if m.__promises__promisesPort = invalid then
-            m.__promises__promisesPort = createObject("roMessagePort")' No-op for compatibility with other environments
+            m.__promises__promisesPort = hostPort' No-op for compatibility with other environments
         end if
     end sub
 
@@ -569,11 +576,18 @@ namespace promises.internal
     enum PromiseField
         promiseState = "promiseState"
         promiseResult = "promiseResult"
+        promiseStateLowerCase = "promisestate"
+        promiseResultLowerCase = "promiseresult"
     end enum
 
     ' Clear storage for a given promise
-    sub clearPromiseStorage(promise as object)
-        m.delete("__promises__" + promise.id)
+    sub clearPromiseStorage(promise as object, nodeEvent = invalid as dynamic)
+        if nodeEvent <> invalid then
+            id = "__promises__" + nodeEvent.getNode()
+        else
+            id = "__promises__" + promise.id
+        end if
+        m.delete(id)
     end sub
 
     function getLibPath() as string
@@ -591,13 +605,19 @@ namespace promises.internal
     end function
 
     ' Get the storage for a promise on `m`
-    function getPromiseStorage(promise as object) as object
-        id = "__promises__" + promise.id
+    function getPromiseStorage(promise as object, nodeEvent = invalid as dynamic) as object
+        if nodeEvent <> invalid then
+            id = "__promises__" + nodeEvent.getNode()
+        else
+            id = "__promises__" + promise.id
+        end if
 
         storage = m[id]
+
+        ' Only create storage and register observers if it does not exist
         if storage = invalid then
             if m.__promises__promisesPort <> invalid then
-                promise.observeFieldScoped(promises.internal.PromiseField.promiseState, m.__promises__promisesPort)
+                promise.observeFieldScoped(promises.internal.PromiseField.promiseState, m.__promises__promisesPort, [promises.internal.PromiseField.promiseResult])
             else
                 ' unregister any observers on the promise to prevent multiple callbacks
                 promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
@@ -606,9 +626,8 @@ namespace promises.internal
                     promises.internal.delay(sub(context as dynamic)
                         promises.internal.notifyListeners(context.event)
                     end sub, { event: event })
-                end sub)
+                end sub, [promises.internal.PromiseField.promiseResult])
             end if
-
             storage = {
                 promise: promise
                 thenListeners: []
@@ -617,6 +636,7 @@ namespace promises.internal
             }
             m[id] = storage
         end if
+
         return storage
     end function
 
@@ -681,29 +701,29 @@ namespace promises.internal
 
             ' unregister any observers once the promise is completed
             promises.internal.unobserveFieldScoped(originalPromise, promises.internal.PromiseField.promiseState)
-            promiseStorage = promises.internal.getPromiseStorage(originalPromise)
+            promiseStorage = promises.internal.getPromiseStorage(originalPromise, event)
             ' Delete the storage for this promise since we are going to handled all of the current listeners.
             ' Any new listeners created as a result of the logic in the callbacks will
             ' register a new instance of the promise storage item. If a new storage item is created
             ' we will notify the new listeners when we are done with the current ones.
-            promises.internal.clearPromiseStorage(originalPromise)
+            promises.internal.clearPromiseStorage(originalPromise, event)
 
-            promiseState = originalPromise.promiseState
-            promiseResult = originalPromise.promiseResult
+            promiseState = event.getData()
+            promiseResult = event.getInfo().promiseResult
 
             'handle .then() listeners
             for each listener in promiseStorage.thenListeners
-                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.PromiseState.resolved, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.resolved, true, promiseResult)
             end for
 
             'handle .catch() listeners
             for each listener in promiseStorage.catchListeners
-                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.PromiseState.rejected, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.rejected, true, promiseResult)
             end for
 
             'handle .finally() listeners
             for each listener in promiseStorage.finallyListeners
-                promises.internal.processPromiseListener(originalPromise, listener, true)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, true, false, promiseResult)
             end for
             #if PROMISES_DEBUG
                 if m.__promises__debug = invalid then
@@ -745,7 +765,7 @@ namespace promises.internal
     end function
 
     ' Handle an individual promise listener
-    sub processPromiseListener(originalPromise as object, storageItem as object, callCallback as boolean, promiseValue = "__INVALID__" as dynamic)
+    sub processPromiseListener(originalPromise as object, originalPromiseState as string, storageItem as object, callCallback as boolean, isThenOrCatch as boolean, promiseValue = invalid as dynamic)
         newPromise = storageItem.promise
         #if PROMISES_DEBUG
             print "[promises.notify]", originalPromise.id, "notifying", newPromise.id
@@ -753,7 +773,6 @@ namespace promises.internal
         callback = storageItem.callback
         context = storageItem.context
         hasContext = promises.internal.isSet(context)
-        isThenOrCatch = promises.internal.isSet(promiseValue)
         'only call the callback if configured to do so
         if callCallback then
             #if PROMISES_DEBUG
@@ -820,7 +839,7 @@ namespace promises.internal
             end try
         else
             'use the current promise value to pass to the next promise (this is a .catch handler)
-            if originalPromise.promiseState = promises.PromiseState.rejected then
+            if originalPromiseState = promises.PromiseState.rejected then
                 callbackResult = promises.reject(promiseValue)
             else
                 callbackResult = promiseValue
@@ -862,13 +881,15 @@ namespace promises.internal
                 context = {
                     newPromise: newPromise
                     originalPromise: originalPromise
+                    originalPromiseState: originalPromiseState
+                    originalPromiseResult: promiseValue
                 }
 
                 promises.onThen(callbackPromise, sub (result as dynamic, context as dynamic)
-                    if context.originalPromise.promiseState = promises.PromiseState.resolved then
-                        promises.resolve(context.originalPromise.promiseResult, context.newPromise)
+                    if context.originalPromiseState = promises.PromiseState.resolved then
+                        promises.resolve(context.originalPromiseResult, context.newPromise)
                     else
-                        promises.reject(context.originalPromise.promiseResult, context.newPromise)
+                        promises.reject(context.originalPromiseResult, context.newPromise)
                     end if
                 end sub, context)
 
@@ -876,10 +897,10 @@ namespace promises.internal
                     promises.reject(error, context.newPromise)
                 end sub, context)
             else
-                if originalPromise.promiseState = promises.PromiseState.resolved then
-                    promises.resolve(originalPromise.promiseResult, newPromise)
+                if originalPromiseState = promises.PromiseState.resolved then
+                    promises.resolve(promiseValue, newPromise)
                 else
-                    promises.reject(originalPromise.promiseResult, newPromise)
+                    promises.reject(promiseValue, newPromise)
                 end if
             end if
         end if
