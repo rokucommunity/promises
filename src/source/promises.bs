@@ -425,40 +425,27 @@ namespace promises
     ' - the subtype ends with "_promise" case insensitive
     ' - the node has a field called "promiseState"
     function isPromise(promise as dynamic) as boolean
-        if type(promise) <> "roSGNode" then return false
-
-        ' Fast cached result (one-time classification)
-        if promise.hasField("__promises__isPromise") then
-            return promise.__promises__isPromise
+        if not type(promise) = "roSGNode" then
+            return false
         end if
 
         subType = lCase(promise.subType())
 
-        result = false
         if subType.endsWith("_promise") then
-            result = true
-        else if subType = "promise" then
-            result = true
-        else
-            ' Walk up inheritance chain
-            while true
-                subType = promise.parentSubtype(subType)
-                if subType = "" then exit while
-                if lCase(subType).endsWith("_promise") then
-                    result = true
-                    exit while
-                end if
-            end while
-
-            if not result then
-                result = promise.hasField(promises.internal.PromiseField.promiseState)
-            end if
+            return true
         end if
 
-        ' Cache classification on the node itself so it is a single operation next time
-        promise.update({ __promises__isPromise: result }, true)
+        if subType = "promise" then
+            return true
+        end if
 
-        return result
+        while true
+            subType = promise.parentSubtype(subType)
+            if lCase(subType).endsWith("_promise") then return true
+            if subType = "" then exit while
+        end while
+
+        return promise.hasField(promises.internal.PromiseField.promiseState)
     end function
 
     ' Determines if the given node event was triggered on a promise like node.
