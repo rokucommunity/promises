@@ -448,6 +448,14 @@ namespace promises
         return promise.hasField(promises.internal.PromiseField.promiseState)
     end function
 
+    ' Determines if the given node event was triggered on a promise like node.
+    function isPromiseEvent(event as dynamic) as boolean
+        if not type(event) = "roSGNodeEvent" then
+            return false
+        end if
+        return lCase(event.getField()) = promises.internal.PromiseField.promiseStateLowerCase
+    end function
+
     ' Remove all promise storage from the current m
     sub clean()
         for each key in m
@@ -530,6 +538,8 @@ namespace promises.internal
     enum PromiseField
         promiseState = "promiseState"
         promiseResult = "promiseResult"
+        promiseStateLowerCase = "promisestate"
+        promiseResultLowerCase = "promiseresult"
     end enum
 
     ' Clear storage for a given promise
