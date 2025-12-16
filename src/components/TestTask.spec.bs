@@ -1,0 +1,22 @@
+import "pkg:/source/promises.bs"
+
+function doAction(actionName as string) as dynamic
+    m.port = createObject("roMessagePort")
+    m.top.promise = promises.create()
+    m.top.functionName = actionName
+    m.top.control = "RUN"
+    return m.top.promise
+end function
+
+sub test1()
+    promises.initTaskFunctionality(m.port)
+    promises.chain(promises.resolve(true)).then(sub(response as object)
+        promises.resolve("task completed", m.top.promise)
+    end sub).finally(sub(response as object)
+        m.top.control = "STOP"
+    end sub)
+
+    promises.runEventLoop(m.port, sub(message)
+        ' do nothing
+    end sub)
+end sub
