@@ -658,17 +658,17 @@ namespace promises.internal
 
             'handle .then() listeners
             for each listener in promiseStorage.thenListeners
-                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.resolved, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.resolved, true, promiseResult)
             end for
 
             'handle .catch() listeners
             for each listener in promiseStorage.catchListeners
-                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.rejected, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.rejected, true, promiseResult)
             end for
 
             'handle .finally() listeners
             for each listener in promiseStorage.finallyListeners
-                promises.internal.processPromiseListener(originalPromise, promiseState, listener, true)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, true, false, promiseResult)
             end for
             #if PROMISES_DEBUG
                 if m.__promises__debug = invalid then
@@ -706,7 +706,7 @@ namespace promises.internal
     end function
 
     ' Handle an individual promise listener
-    sub processPromiseListener(originalPromise as object, originalPromiseState as string, storageItem as object, callCallback as boolean, promiseValue = "__INVALID__" as dynamic)
+    sub processPromiseListener(originalPromise as object, originalPromiseState as string, storageItem as object, callCallback as boolean, isThenOrCatch as boolean, promiseValue = invalid as dynamic)
         newPromise = storageItem.promise
         #if PROMISES_DEBUG
             print "[promises.notify]", originalPromise.id, "notifying", newPromise.id
@@ -714,7 +714,6 @@ namespace promises.internal
         callback = storageItem.callback
         context = storageItem.context
         hasContext = promises.internal.isSet(context)
-        isThenOrCatch = promises.internal.isSet(promiseValue)
         'only call the callback if configured to do so
         if callCallback then
             #if PROMISES_DEBUG
@@ -824,13 +823,14 @@ namespace promises.internal
                     newPromise: newPromise
                     originalPromise: originalPromise
                     originalPromiseState: originalPromiseState
+                    originalPromiseResult: promiseValue
                 }
 
                 promises.onThen(callbackPromise, sub (result as dynamic, context as dynamic)
                     if context.originalPromiseState = promises.PromiseState.resolved then
-                        promises.resolve(context.originalPromise.promiseResult, context.newPromise)
+                        promises.resolve(context.originalPromiseResult, context.newPromise)
                     else
-                        promises.reject(context.originalPromise.promiseResult, context.newPromise)
+                        promises.reject(context.originalPromiseResult, context.newPromise)
                     end if
                 end sub, context)
 
@@ -839,9 +839,9 @@ namespace promises.internal
                 end sub, context)
             else
                 if originalPromiseState = promises.PromiseState.resolved then
-                    promises.resolve(originalPromise.promiseResult, newPromise)
+                    promises.resolve(promiseValue, newPromise)
                 else
-                    promises.reject(originalPromise.promiseResult, newPromise)
+                    promises.reject(promiseValue, newPromise)
                 end if
             end if
         end if
