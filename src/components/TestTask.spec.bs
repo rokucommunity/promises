@@ -37,6 +37,25 @@ sub test2()
     end sub)
 end sub
 
+sub test3()
+    promises.initTaskFunctionality(m.port)
+    promises.chain(promises.resolve(true), {}).then(function(response as object, context as object) as dynamic
+        return getNetworkResult("http://ip-api.com/json/", "GET", {})
+    end function).then(function(response as object, context as object) as dynamic
+        context.ipCheckOne = parseJSON(response.data).query
+        return getNetworkResult("https://api.ipify.org/?format=json", "GET", {})
+    end function).then(sub(response as object, context as object)
+        context.ipCheckTwo = parseJSON(response.data).ip
+        promises.resolve(context, m.top.promise)
+    end sub).finally(sub(response as object)
+        m.top.control = "STOP"
+    end sub)
+
+    promises.runEventLoop(m.port, sub(message)
+        ' do nothing
+    end sub)
+end sub
+
 
 function getNetworkResult(url as string, method as string, body as object) as object
     urlTransfer = CreateObject("roUrlTransfer")
