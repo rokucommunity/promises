@@ -2295,13 +2295,28 @@ namespace tests
         end function
 
         @async
-        @it("task")
-        @only()
+        @it("taskTest1")
         function _()
             task = createObject("roSGNode", "TestTask")
             promise = task@.doAction("test1")
             promises.chain(promise).then(function(result)
                 m.testSuite.assertEqual(result, "task completed")
+                m.testSuite.done()
+            end function).catch(function(error)
+                print "error", error, FormatJson(error.backtrace)
+            end function)
+        end function
+
+
+        @async
+        @it("taskTest2")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test2")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result.test, "okay")
+                m.testSuite.assertNotInvalid(result.ipInfo) 'asserts the promise resolved and modified the context
+                m.testSuite.assertEqual(result.ipInfo.status, "success") 'asserts the promise resolved and modified the context with value
                 m.testSuite.done()
             end function).catch(function(error)
                 print "error", error, FormatJson(error.backtrace)

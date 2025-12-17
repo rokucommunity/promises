@@ -20,3 +20,64 @@ sub test1()
         ' do nothing
     end sub)
 end sub
+
+sub test2()
+    promises.initTaskFunctionality(m.port)
+    promises.chain(promises.resolve(true), { test: "okay" }).then(function(response as object, context as object) as dynamic
+        return getNetworkResult("http://ip-api.com/json/", "GET", {})
+    end function).then(sub(response as object, context as object)
+        context.ipInfo = parseJSON(response.data)
+        promises.resolve(context, m.top.promise)
+    end sub).finally(sub(response as object)
+        m.top.control = "STOP"
+    end sub)
+
+    promises.runEventLoop(m.port, sub(message)
+        ' do nothing
+    end sub)
+end sub
+
+
+function getNetworkResult(url as string, method as string, body as object) as object
+    urlTransfer = CreateObject("roUrlTransfer")
+    urlTransfer.setUrl(url)
+    urlTransfer.setRequest(method)
+    urlTransfer.setCertificatesFile("common:/certs/ca-bundle.crt")
+    urlTransfer.initClientCertificates()
+    urlTransfer.setMessagePort(m.port)
+    urlTransfer.setPort(m.port)
+    urlTransfer.setMinimumTransferRate(1, 5)
+    if method = "GET" then
+        urlTransfer.asyncGetToString()
+    else
+        urlTransfer.addHeader("Accept", "application/json")
+        urlTransfer.addHeader("Content-Type", "application/json")
+        body = FormatJSON(body)
+        urlTransfer.asyncPostFromString(body)
+    end if
+
+    msg = wait(0, m.port)
+    if type(msg) = "roUrlEvent" then
+        responseCode = msg.getResponseCode()
+        responseString = msg.getString()
+
+        if responseCode = 200 then
+            return {
+                data: responseString
+            }
+        else
+            return {
+                error: true
+                responseCode: responseCode
+                data: invalid
+            }
+        end if
+    end if
+
+    ' Return error if message is not roUrlEvent
+    return {
+        error: true
+        responseCode: -1
+        data: invalid
+    }
+end function
