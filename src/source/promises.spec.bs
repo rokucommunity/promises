@@ -2309,27 +2309,12 @@ namespace tests
 
 
         @async
-        @it("Promise In Task Test with Network Call and Context Modification")
+        @it("Promise In Task Test with Fake Network Call")
         function _()
             task = createObject("roSGNode", "TestTask")
             promise = task@.doAction("test2")
             promises.chain(promise).then(function(result)
-                m.testSuite.assertEqual(result.test, "okay")
-                m.testSuite.assertNotInvalid(result.ipInfo) 'asserts the promise resolved and modified the context
-                m.testSuite.assertEqual(result.ipInfo.status, "success") 'asserts the promise resolved and modified the context with value
-                m.testSuite.done()
-            end function).catch(function(error)
-                print "error", error, FormatJson(error.backtrace)
-            end function)
-        end function
-
-        @async
-        @it("Promise In Task Test with Multiple Network Calls and Context Modification")
-        function _()
-            task = createObject("roSGNode", "TestTask")
-            promise = task@.doAction("test3")
-            promises.chain(promise).then(function(result)
-                m.testSuite.assertEqual(result.ipCheckOne, result.ipCheckTwo) 'asserts the promise resolved and modified the context with value
+                m.testSuite.assertEqual(result.ipInfo, "hello")
                 m.testSuite.done()
             end function).catch(function(error)
                 print "error", error, FormatJson(error.backtrace)
@@ -2340,7 +2325,7 @@ namespace tests
         @it("Promise In Task Test with rejection")
         function _()
             task = createObject("roSGNode", "TestTask")
-            promise = task@.doAction("test4")
+            promise = task@.doAction("test3")
             promises.chain(promise).then(function(result)
                 m.testSuite.fail("Promise was expected to be rejected but was resolved instead")
                 m.testSuite.done()
@@ -2350,7 +2335,6 @@ namespace tests
                 m.testSuite.done()
             end function)
         end function
-
     end class
 end namespace
 

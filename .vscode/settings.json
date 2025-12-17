@@ -24,5 +24,6 @@
     "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": false,
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
-    "brightscript.bsdk": "./node_modules/brighterscript"
+    "brightscript.bsdk": "./node_modules/brighterscript",
+    "brightscript.projects": ["bsconfig.json", "bsconfig.tests.json"]
 }
