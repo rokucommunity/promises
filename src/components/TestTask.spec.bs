@@ -56,6 +56,19 @@ sub test3()
     end sub)
 end sub
 
+sub test4()
+    promises.initTaskFunctionality(m.port)
+    promises.chain(promises.resolve(true), {}).then(sub(response as object, context as object) as dynamic
+        promises.reject("Simulated error", m.top.promise)
+    end sub).finally(sub(response as object)
+        m.top.control = "STOP"
+    end sub)
+
+    promises.runEventLoop(m.port, sub(message)
+        ' do nothing
+    end sub)
+end sub
+
 
 function getNetworkResult(url as string, method as string, body as object) as object
     urlTransfer = CreateObject("roUrlTransfer")

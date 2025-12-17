@@ -2327,12 +2327,27 @@ namespace tests
         @it("Promise In Task Test with Multiple Network Calls and Context Modification")
         function _()
             task = createObject("roSGNode", "TestTask")
-            promise = task@.doAction("test2")
+            promise = task@.doAction("test3")
             promises.chain(promise).then(function(result)
                 m.testSuite.assertEqual(result.ipCheckOne, result.ipCheckTwo) 'asserts the promise resolved and modified the context with value
                 m.testSuite.done()
             end function).catch(function(error)
                 print "error", error, FormatJson(error.backtrace)
+            end function)
+        end function
+
+        @async
+        @it("Promise In Task Test with rejection")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test4")
+            promises.chain(promise).then(function(result)
+                m.testSuite.fail("Promise was expected to be rejected but was resolved instead")
+                m.testSuite.done()
+            end function).catch(function(error)
+                print "Caught expected error:", error
+                m.testSuite.assertNotInvalid(error)
+                m.testSuite.done()
             end function)
         end function
 
