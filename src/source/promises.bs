@@ -494,36 +494,121 @@ namespace promises
         }
     end function
 
+    function getMessagePort()
+        return m.__promises__promisesPort
+    end function
+
+    ' First, consume and process all promise events from the front of the queue.
+    ' This method is similar to the GetMessage() method, but the returned object (if not invalid) remains in the message queue.
+    ' A later call to WaitMessage(), GetMessage() or PeekMessage() will return the same message.
+    function peekMessage(port as dynamic) as dynamic
+        while true
+            message = port.peekMessage()
+
+            'if this is a promise event, process it and peek again
+            if promises.isPromiseEvent(message) then
+                'remove the message from the queue and process it
+                message = port.getMessage()
+                promises.internal.notifyListeners(message)
+                continue while
+            end if
+
+            return message
+        end while
+        return invalid
+    end function
+
+
+    ' First, consume and process all promise events from the front of the queue.
+    ' Then, if an event object is available, it is returned. Otherwise `invalid` is returned. The method returns immediately in either case and does not wait.
+    function getMessage(port as dynamic) as dynamic
+        if promises.peekMessage(port) <> invalid then
+            return port.getMessage()
+        end if
+    end function
+
+
+    ' Same capabilities as the native `wait()` function, except that promise events are automatically processed and removed from its registered `roMessagePort` provided in `promises.setMessagePort()`.
+    function wait(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
+        promisesPort = promises.getMessagePort()
+        utils = createObject("roUtils")
+        portIsPromisesPort = false
+
+        ' if the promise port is the same as the supplied port (and we can actually use roUtils to compare same-ness)
+        if utils <> invalid and utils.isSameObject(port, promisesPort)
+            portIsPromisesPort = true
+        end if
+
+        timespan = createObject("roTimeSpan")
+
+        while true
+            currentDuration = timespan.TotalMilliseconds()
+            'if we are not waiting indefinitely
+            if timeoutMilliseconds > 0 then
+                ' if the duration has exceeded the wait time, exit and return invalid
+                if currentDuration >= timeoutMilliseconds then
+                    return invalid
+
+                    'the duration has not exeeded the wait time. compute how much time we have left
+                else
+                    thisTickTimeout = timeoutMilliseconds - currentDuration
+                end if
+            else
+                thisTickTimeout = timeout
+            end if
+            'ensure we don't wait too long in a single tick (so promises still have time to resolve)
+            if thisTickTimeout > 200 then
+                thisTickTimeout = 200
+            else
+                thisTickTimeout = timeout
+            end if
+
+            'if the port we're waiting on is the promises port, then no need for the double-latch
+            if portIsPromisesPort then
+                event = wait(timeout, port)
+                if promises.isPromiseEvent(event) then
+                    promises.internal.notifyListeners(event)
+                    continue while
+                end if
+            else
+                'flush all pending promises on the promise port
+                promises.peekMessage(promises.getMessagePort())
+
+                'wait a little bit for an event on the supplied port
+                event = wait(thisTickTimeout, port)
+
+                'if the message was a promise event, handle it
+                if promises.isPromiseEvent(event) then
+                    promises.internal.notifyListeners(event)
+                    continue while
+                else
+                    'it's not a promise event! return it
+                    return event
+                end if
+            end if
+        end while
+        return invalid
+    end function
+
+    function closeAllTheThings()
+        unhandledMessages = []
+        while true
+            message = wait(timeout, port)
+            if promises.isPromiseEvent(message) then
+                promises.internal.notifyListeners(message)
+                continue while
+            else
+                unhandledMessages.push(message)
+            end if
+        end while
+        return unhandledMessages
+    end function
+
     ' Makes sure the value supplied is a promise
     function ensurePromise(value as object) as object
         if promises.isPromise(value) then return value
         return promises.resolve(value)
     end function
-
-    sub runEventLoop(hostPort as object, callback as function, context = invalid as dynamic) as void
-        initTaskFunctionality(hostPort)
-
-        while true
-            message = wait(0, hostPort)
-            if message = invalid then continue while
-
-            if promises.isPromiseEvent(message) then
-                promises.internal.notifyListeners(message)
-            else
-                if context = invalid then
-                    callback(message)
-                else
-                    callback(message, context)
-                end if
-            end if
-        end while
-    end sub
-
-    sub initTaskFunctionality(hostPort as object)
-        if m.__promises__promisesPort = invalid then
-            m.__promises__promisesPort = hostPort' No-op for compatibility with other environments
-        end if
-    end sub
 
     enum PromiseState
         pending = "pending"
