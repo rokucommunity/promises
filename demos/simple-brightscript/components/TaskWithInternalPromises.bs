@@ -19,7 +19,7 @@ end sub
 
 
 function doNetworkRequest(url as string, method as string, body as object) as object
-    promise = promises_create()
+    promise = promises.create()
     promises.resolve({
         "something": "OF VALUE"
     }, promise)
