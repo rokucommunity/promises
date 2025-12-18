@@ -25,5 +25,8 @@
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
     "brightscript.bsdk": "./node_modules/brighterscript",
-    "brightscript.projects": ["bsconfig.json", "bsconfig.tests.json"]
+    "brightscript.projects": [
+        "bsconfig.json",
+        "bsconfig.tests.json"
+    ]
 }

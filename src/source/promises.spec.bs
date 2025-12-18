@@ -1,7 +1,7 @@
 import "pkg:/source/promises.bs"
 
 namespace tests
-    @SGNode("test")
+    @SGNode("Test")
     @suite
     class PromisesTests extends rooibos.BaseTestSuite
 

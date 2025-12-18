@@ -6,6 +6,9 @@
             "type": "brightscript",
             "request": "launch",
             "rootDir": "${workspaceFolder}/dist",
+            "files": [
+                "**/*"
+            ],
             "preLaunchTask": "build-tests",
             "enableDebuggerAutoRecovery": true,
             "stopDebuggerOnAppExit": true,
