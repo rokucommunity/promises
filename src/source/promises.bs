@@ -542,6 +542,12 @@ namespace promises.internal
         promiseResultLowerCase = "promiseresult"
     end enum
 
+    enum ListenerType
+        then = "then"
+    catch = "catch"
+        finally = "finally"
+    end enum
+
     ' Clear storage for a given promise
     sub clearPromiseStorage(promise as object, nodeEvent = invalid as dynamic)
         if nodeEvent <> invalid then
@@ -641,6 +647,7 @@ namespace promises.internal
             print errorMessage
         #end if
         throw errorMessage
+        'bs:disable-next-line
         return invalid
     end function
 
@@ -668,17 +675,17 @@ namespace promises.internal
 
             'handle .then() listeners
             for each listener in promiseStorage.thenListeners
-                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.resolved, true, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promises.internal.ListenerType.then, promiseResult)
             end for
 
             'handle .catch() listeners
             for each listener in promiseStorage.catchListeners
-                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.rejected, true, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promises.internal.ListenerType.catch, promiseResult)
             end for
 
             'handle .finally() listeners
             for each listener in promiseStorage.finallyListeners
-                promises.internal.processPromiseListener(originalPromise, promiseState, listener, true, false, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promises.internal.ListenerType.finally, promiseResult)
             end for
             #if PROMISES_DEBUG
                 if m.__promises__debug = invalid then
@@ -715,8 +722,18 @@ namespace promises.internal
         return (type(value) = "String" or type(value) = "roString") and value <> ""
     end function
 
+    enum ArgCombination
+        none = 0
+        resultOnly = 1
+        resultAndContext = 2
+        contextOnly = 3
+    end enum
+
+    syntax error to prevent roku from running the code, cuz this is broken!
+
     ' Handle an individual promise listener
-    sub processPromiseListener(originalPromise as object, originalPromiseState as string, storageItem as object, callCallback as boolean, isThenOrCatch as boolean, promiseValue = invalid as dynamic)
+    sub processPromiseListener(originalPromise as object, originalPromiseState as string, storageItem as object, listenerType as promises.internal.ListenerType, promiseValue = invalid as dynamic)
+
         newPromise = storageItem.promise
         #if PROMISES_DEBUG
             print "[promises.notify]", originalPromise.id, "notifying", newPromise.id
@@ -724,104 +741,96 @@ namespace promises.internal
         callback = storageItem.callback
         context = storageItem.context
         hasContext = promises.internal.isSet(context)
-        'only call the callback if configured to do so
+        'if we don't have a context, set it to a default value that might be used for recovery
+        if hasContext = false then
+            context = 0 ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
+        end if
+
+        if listenerType = promises.internal.ListenerType.then then
+            callCallback = originalPromiseState = promises.PromiseState.resolved
+            if hasContext then
+                argFlows = [ArgCombination.resultAndContext, ArgCombination.resultOnly, ArgCombination.none]
+            else
+                argFlows = [ArgCombination.resultOnly, ArgCombination.resultAndContext, ArgCombination.none]
+            end if
+        else if listenerType = promises.internal.ListenerType.catch then
+            callCallback = originalPromiseState = promises.PromiseState.rejected
+            if hasContext then
+                argFlows = [ArgCombination.resultAndContext, ArgCombination.resultOnly, ArgCombination.none]
+            else
+                argFlows = [ArgCombination.resultOnly, ArgCombination.resultAndContext, ArgCombination.none]
+            end if
+        else 'listenerType === promises.internal.ListenerType.finally
+            callCallback = true
+            if hasContext then
+                argFlows = [ArgCombination.contextOnly, ArgCombination.none]
+            else
+                argFlows = [ArgCombination.none, ArgCombination.contextOnly]
+            end if
+        end if
+
+        callbackResult = invalid
+
         if callCallback then
             #if PROMISES_DEBUG
                 print "[promises.notify]", originalPromise.id, "calling callback for", newPromise.id
             #end if
-            try
-                '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
-                if isThenOrCatch then
-                    if hasContext then
-                        lineNumber = -1
-                        try
-                            lineNumber = LINE_NUM + 1
-                            callbackResult = callback(promiseValue, context)
-                        catch error
-                            file = error.backtrace.peek()
-                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
-                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
-                                #else
-                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
-                                #end if
-                                callbackResult = callback(promiseValue)
-                            else
-                                promises.internal.logCrashIfEnabled(error)
-                                callbackResult = promises.reject(error)
-                            end if
-                        end try
-                    else
-                        try
-                            lineNumber = LINE_NUM + 1
-                            callbackResult = callback(promiseValue)
-                        catch error
-                            file = error.backtrace.peek()
-                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
-                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
-                                #else
-                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
-                                #end if
-                                callbackResult = callback(promiseValue, 0) ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
-                            else
-                                promises.internal.logCrashIfEnabled(error)
-                                callbackResult = promises.reject(error)
-                            end if
-                        end try
-                    end if
 
-                    '.finally callback takes 1 optional parameter (`context`)
-                else
-                    if hasContext then
-                        lineNumber = -1
-                        try
-                            lineNumber = LINE_NUM + 1
-                            callbackResult = callback(context)
-                        catch error
-                            file = error.backtrace.peek()
-                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
-                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
-                                #else
-                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
-                                #end if
-                                callbackResult = callback()
-                            else
-                                promises.internal.logCrashIfEnabled(error)
-                                callbackResult = promises.reject(error)
-                            end if
-                        end try
-                    else
-                        try
-                            lineNumber = LINE_NUM + 1
-                            callbackResult = callback()
-                        catch error
-                            file = error.backtrace.peek()
-                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
-                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
-                                #else
-                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
-                                #end if
-                                callbackResult = callback(0) ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
-                            else
-                                promises.internal.logCrashIfEnabled(error)
-                                callbackResult = promises.reject(error)
-                            end if
-                        end try
+            lastSeenError = invalid
+            ' try different arg combinations until one works. We'll try the most likely combinations first. These are defined above based on
+            ' whether context is provided and which type of listener this is. Sometimes callbacks might accidentally define a param when they shouldn't,
+            ' other times they forgot to define a param but it's required.
+            for each argFlow in argFlows
+                lineNumber = -1
+                try
+                    if argFlow = ArgCombination.resultAndContext then
+                        lineNumber = LINE_NUM + 1
+                        callbackResult = callback(promiseValue, context)
+
+                    else if argFlow = ArgCombination.resultOnly then
+                        lineNumber = LINE_NUM + 1
+                        callbackResult = callback(promiseValue)
+
+                    else if argFlow = ArgCombination.contextOnly then
+                        lineNumber = LINE_NUM + 1
+                        callbackResult = callback(context)
+
+                    else ' if argFlow = ArgCombination.none then
+                        lineNumber = LINE_NUM + 1
+                        callbackResult = callback()
                     end if
-                end if
-            catch e
+                    'we got a result. clear the error
+                    lastSeenError = invalid
+                    exit for
+                catch error
+                    file = error.backtrace.peek()
+                    lastSeenError = error
+                    if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                        wrongNumberOfParametersMessage = "Wrong number of parameters defined for promise '" + listenerType + "' callback. We will attempt to recover, but performance will suffer if you don't fix the problem."
+                        #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                            print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, wrongNumberOfParametersMessage)
+                        #else
+                            print "[promises.error]: " promises.internal.formatStackTrace(error, wrongNumberOfParametersMessage)
+                        #end if
+                    else
+                        exit for ' some other error occurred, exit the loop and reject below
+                    end if
+                end try
+            end for
+
+            if lastSeenError <> invalid then
+                'if we get here and we still have an error, it means none of the arg combinations worked. Reject the error and let's move on.
                 #if PROMISES_DEBUG
                     print "[promises.notify]", originalPromise.id, "callback for", newPromise.id, "threw exception", e
                 #end if
-                promises.internal.logCrashIfEnabled(e)
+                promises.internal.logCrashIfEnabled(lastSeenError)
                 'the result is a rejected promise
-                callbackResult = promises.reject(e)
-            end try
-        else
-            'use the current promise value to pass to the next promise (this is a .catch handler)
+                callbackResult = promises.reject(lastSeenError)
+            end if
+
+
+        else 'if callCallback = false
+            'pass the promise value to the next promise (this is a .catch handler)
             if originalPromiseState = promises.PromiseState.rejected then
                 callbackResult = promises.reject(promiseValue)
             else
@@ -829,7 +838,8 @@ namespace promises.internal
             end if
         end if
 
-        if isThenOrCatch then
+        'is `then` or `catch` listener
+        if not listenerType <> promises.internal.ListenerType.then then
             'if the .then() callback returned a promise. wait for it to resolve and THEN resolve the newPromise
             if promises.isPromise(callbackResult) then
                 callbackPromise = callbackResult
@@ -857,7 +867,8 @@ namespace promises.internal
             else
                 promises.resolve(callbackResult, newPromise)
             end if
-        else
+
+        else ' if listenerType = promises.internal.ListenerType.finally then
             ' This is a .finally() block
             if promises.isPromise(callbackResult) then
                 callbackPromise = callbackResult
@@ -1118,8 +1129,6 @@ namespace promises.internal
 
         return result
     end function
-
-    const wrongNumberOfParametersMessage = "Wrong number of parameters in promise callback. We have recovered, but this should be fixed as performance will suffer."
 
     ' Returns a string representation of the stack trace
     ' example:
