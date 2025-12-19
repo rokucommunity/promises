@@ -2323,7 +2323,6 @@ namespace tests
 
         @async
         @it("Promise In Task Test with rejection")
-        @only()
         function _()
             task = createObject("roSGNode", "TestTask")
             promise = task@.doAction("test3")

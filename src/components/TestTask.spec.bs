@@ -27,7 +27,7 @@ sub test2()
         return doNetworkRequest("http://ip-api.com/json/")
     end function).then(sub(response as object)
         promises.resolve(response, m.top.promise)
-    end sub).finally(sub(response as object)
+    end sub).finally(sub()
         m.top.control = "STOP"
     end sub)
 
@@ -45,7 +45,7 @@ sub test3()
     promises.setMessagePort(m.port)
     promises.chain(promises.resolve(true), {}).then(sub(response as object, context as object) as dynamic
         promises.reject("Simulated error", m.top.promise)
-    end sub).finally(sub(response as object)
+    end sub).finally(sub(context as object)
         m.top.control = "STOP"
     end sub)
 
