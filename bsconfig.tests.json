@@ -7,7 +7,7 @@
 		"**/*"
 	],
 	"plugins": [
-		"rooibos-roku"
+        "rooibos-roku"
 	],
 	"rooibos": {
 		"isRecordingCodeCoverage": false,
