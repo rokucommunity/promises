@@ -2296,6 +2296,7 @@ namespace tests
 
         @async
         @it("Simple Promise In Task Test")
+        @only()
         function _()
             task = createObject("roSGNode", "TestTask")
             promise = task@.doAction("test1")

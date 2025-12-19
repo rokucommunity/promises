@@ -9,20 +9,20 @@ function doAction(actionName as string) as dynamic
 end function
 
 sub test1()
-    promises.initTaskFunctionality(m.port)
+    promises.setMessagePort(m.port)
     promises.chain(promises.resolve(true)).then(sub(response as object)
         promises.resolve("task completed", m.top.promise)
     end sub).finally(sub(response as object)
         m.top.control = "STOP"
     end sub)
 
-    promises.runEventLoop(m.port, sub(message)
-        ' do nothing
-    end sub)
+    while true
+        message = promises.wait(20, m.port)
+    end while
 end sub
 
 sub test2()
-    promises.initTaskFunctionality(m.port)
+    promises.setMessagePort(m.port)
     promises.chain(promises.resolve(true)).then(function(response as object) as dynamic
         return doNetworkRequest("http://ip-api.com/json/")
     end function).then(sub(response as object)
@@ -32,25 +32,26 @@ sub test2()
     end sub)
 
     m.top.observeField("request", m.port)
-    promises.runEventLoop(m.port, sub(event)
-        if type(event) = "roSGNodeEvent" then
-            requestId = event.getData()
+    while true
+        message = promises.wait(20, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
             promises.resolve({ ipInfo: "hello" }, m.requestStorage[requestId].promise)
         end if
-    end sub)
+    end while
 end sub
 
 sub test3()
-    promises.initTaskFunctionality(m.port)
+    promises.setMessagePort(m.port)
     promises.chain(promises.resolve(true), {}).then(sub(response as object, context as object) as dynamic
         promises.reject("Simulated error", m.top.promise)
     end sub).finally(sub(response as object)
         m.top.control = "STOP"
     end sub)
 
-    promises.runEventLoop(m.port, sub(message)
-        ' do nothing
-    end sub)
+    while true
+        message = promises.wait(20, m.port)
+    end while
 end sub
 
 function doNetworkRequest(url as string) as dynamic
