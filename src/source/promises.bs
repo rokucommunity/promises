@@ -535,7 +535,7 @@ namespace promises
 
 
     ' Same capabilities as the native `wait()` function, except that promise events are automatically processed and removed from its registered `roMessagePort` provided in `promises.setMessagePort()`.
-    function wait(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
+    function wait2(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
         promisesPort = promises.getMessagePort()
         'bs:disable-next-line
         utils = createObject("roUtils") '
@@ -556,7 +556,7 @@ namespace promises
                 if currentDuration >= timeoutMilliseconds then
                     return invalid
 
-                    'the duration has not exeeded the wait time. compute how much time we have left
+                    'the duration has not exceeded the wait time. compute how much time we have left
                 else
                     thisTickTimeout = timeoutMilliseconds - currentDuration
                 end if
@@ -564,7 +564,7 @@ namespace promises
                 thisTickTimeout = timeoutMilliseconds
             end if
             'ensure we don't wait too long in a single tick (so promises still have time to resolve)
-            if thisTickTimeout > 200 then
+            if thisTickTimeout = 0 or thisTickTimeout > 200 then
                 thisTickTimeout = 200
             else
                 thisTickTimeout = timeoutMilliseconds
@@ -577,6 +577,7 @@ namespace promises
                     promises.internal.notifyListeners(event)
                     continue while
                 end if
+                return event
             else
                 'flush all pending promises on the promise port
                 promises.peekMessage(promises.getMessagePort())

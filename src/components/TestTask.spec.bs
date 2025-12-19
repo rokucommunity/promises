@@ -17,7 +17,7 @@ sub test1()
     end sub)
 
     while true
-        message = promises.wait(20, m.port)
+        message = promises.wait2(20, m.port)
     end while
 end sub
 
@@ -33,7 +33,7 @@ sub test2()
 
     m.top.observeField("request", m.port)
     while true
-        message = promises.wait(20, m.port)
+        message = promises.wait2(0, m.port)
         if type(message) = "roSGNodeEvent" then
             requestId = message.getData()
             promises.resolve({ ipInfo: "hello" }, m.requestStorage[requestId].promise)
@@ -50,7 +50,7 @@ sub test3()
     end sub)
 
     while true
-        message = promises.wait(20, m.port)
+        message = promises.wait2(20, m.port)
     end while
 end sub
 
