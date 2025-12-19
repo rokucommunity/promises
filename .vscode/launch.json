@@ -6,12 +6,16 @@
             "type": "brightscript",
             "request": "launch",
             "rootDir": "${workspaceFolder}/dist",
+            "files": [
+                "**/*"
+            ],
             "preLaunchTask": "build-tests",
             "enableDebuggerAutoRecovery": true,
             "stopDebuggerOnAppExit": true,
             "injectRaleTrackerTask": false,
-            "enableDebugProtocol": true
-        }, {
+            "enableDebugProtocol": true,
+        },
+        {
             "name": "Demo App",
             "type": "brightscript",
             "request": "launch",
