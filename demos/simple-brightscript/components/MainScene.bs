@@ -6,11 +6,11 @@ sub init()
 
     'Uncomment the example below to run...
 
-    'Simple network request example (passing in the `m` scope as context)
+    'Simple network request example
     ' promise = networkRequest("http://ip-api.com/json/", "GET")
-    ' promises_onThen(promise, sub(response as object, context = {} as dynamic)
+    ' promises_onThen(promise, sub(response as object)
     '     print "Your timezone is " + response.timezone
-    ' end sub, m)
+    ' end sub)
 
     'Simple single request using method
     ' separateCallbacksExample("http://ip-api.com/json/")
@@ -23,6 +23,19 @@ sub init()
 
     'Simple single request using method with error handling
     ' separateCallbacksExample("http://invalid--url.com")
+
+    runTaskWithInternalPromises()
+end sub
+
+function runTaskWithInternalPromises()
+    task = createObject("roSGNode", "TaskWithInternalPromises")
+    task.observeFieldScoped("response", "onTaskWithInternalPromisesResponseChange")
+    task.control = "RUN"
+end function
+
+sub onTaskWithInternalPromisesResponseChange(event as object)
+    print "onTaskWithInternalPromisesResponseChange:"
+    print event.getData()
 end sub
 
 function networkRequest(url as string, method = "GET" as string, body = {} as object) as object
@@ -74,7 +87,7 @@ sub chainExample()
     promises_chain(promise, context).then(function(ipApiData, context)
         if (ipApiData.error = invalid)
             print "Promises chain first call completed!!!"
-            return getTimeApiTimeToFiji(ipApiData.timezone)
+            return validateTimezoneInformation(ipApiData.timezone)
         else
             print "Promises chain first call failed!!!"
             return {
@@ -94,12 +107,11 @@ sub chainExample()
         end if
 
         m.top.chainResult = context
-
     end function).catch(function(error, context)
         print "Caught an error with the chain promise!!!", error
 
-    end function).finally(function(error, context)
-        print "Chain promise completed!!!", error
+    end function).finally(function(context)
+        print "Chain promise completed!!!", context
     end function)
 end sub
 
@@ -158,18 +170,11 @@ function getIpApiTimeZoneByDomain(domain as string) as object
     return networkRequest(url)
 end function
 
-function getTimeApiTimeToFiji(fromTimeZone as object) as object
+function validateTimezoneInformation(fromTimeZone as object) as object
     print "Your timezone is " + fromTimeZone
-    url = "https://timeapi.io/api/Conversion/ConvertTimeZone"
-    method = "POST"
-
-    body = {
-        "fromTimeZone": fromTimeZone
-        "dateTime": getFullDate() + " 00:00:00"
-        "toTimeZone": "Pacific/Fiji"
-        "dstAmbiguity": ""
-    }
-    return networkRequest(url, method, body)
+    url = "http://worldtimeapi.org/api/timezone/" + fromTimeZone
+    method = "GET"
+    return networkRequest(url, method)
 end function
 
 function getFullDate() as string
@@ -190,12 +195,9 @@ function getFullDate() as string
 end function
 
 function getChainResultString(data as object) as object
-    currentDay = 25
-    fijiDay = data.conversionResult.day
-    fijiHour = data.conversionResult.hour
-    aheadOrBehind = "ahead"
-    if (fijiDay > currentDay) then aheadOrBehind = "behind"
-    return "Fiji is " + fijiHour.toStr() + " hours " + aheadOrBehind + " of your timezone!"
+    timezone = data.timezone
+    doy = data.day_of_year
+    return "Confirming your timezone is is " + timezone + " and the day of year is " + doy.toStr() + "!"
 end function
 
 sub initOnscreenImage()

@@ -1,0 +1,69 @@
+import "pkg:/source/promises.bs"
+
+function doAction(actionName as string) as dynamic
+    m.port = createObject("roMessagePort")
+    m.top.promise = promises.create()
+    m.top.functionName = actionName
+    m.top.control = "RUN"
+    return m.top.promise
+end function
+
+sub test1()
+    promises.setMessagePort(m.port)
+    promises.chain(promises.resolve(true)).then(sub(response as object)
+        promises.resolve("task completed", m.top.promise)
+    end sub).finally(sub(response as object)
+        m.top.control = "STOP"
+    end sub)
+
+    while true
+        message = promises.wait2(20, m.port)
+    end while
+end sub
+
+sub test2()
+    promises.setMessagePort(m.port)
+    promises.chain(promises.resolve(true)).then(function(response as object) as dynamic
+        return doNetworkRequest("http://ip-api.com/json/")
+    end function).then(sub(response as object)
+        promises.resolve(response, m.top.promise)
+    end sub).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+
+    m.top.observeField("request", m.port)
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve({ ipInfo: "hello" }, m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+
+sub test3()
+    promises.setMessagePort(m.port)
+    promises.chain(promises.resolve(true), {}).then(sub(response as object, context as object) as dynamic
+        promises.reject("Simulated error", m.top.promise)
+    end sub).finally(sub(context as object)
+        m.top.control = "STOP"
+    end sub)
+
+    while true
+        message = promises.wait2(20, m.port)
+    end while
+end sub
+
+function doNetworkRequest(url as string) as dynamic
+    promise = promises.create()
+    if m.requestStorage = invalid then
+        m.requestStorage = {}
+    end if
+
+    m.requestStorage[url] = {
+        promise: promise
+    }
+
+    m.top.request = url
+    return promise
+end function

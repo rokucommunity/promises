@@ -1,0 +1,8 @@
+<?rokuml version="1.0" encoding="utf-8"?>
+<component name="TaskWithInternalPromises" extends="Task">
+    <script type="text/brightscript" uri="TaskWithInternalPromises.bs"/>
+    <script type="text/brightscript" uri="pkg:/source/promises.bs"/>
+    <interface>
+        <field id="response" type="assocarray"/>
+    </interface>
+</component>

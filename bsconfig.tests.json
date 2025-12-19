@@ -1,31 +1,34 @@
 {
-	"stagingDir": "./dist",
-	"extends": "./bsconfig.json",
-	"retainStagingDir": true,
-	"createPackage": false,
-	"files": [
-		"**/*"
-	],
-	"plugins": [
-		"rooibos-roku"
-	],
-	"rooibos": {
-		"isRecordingCodeCoverage": false,
-		"isGlobalMethodMockingEnabled": true,
-		"testsFilePattern": null,
-		"tags": [
-			"!integration",
-			"!deprecated",
-			"!fixme"
-		],
-		"showOnlyFailures": true,
-		"catchCrashes": true,
-		"lineWidth": 70,
-		"failFast": false,
-		"sendHomeOnFinish": false,
-		"colorizeOutput": true,
-		"reporters": [
-			"mocha"
-		]
-	}
+    "files": [
+        "**/*"
+    ],
+    "rootDir": "./src",
+    "stagingDir": "./dist",
+    "emitDefinitions": true,
+    "sourceMap": true,
+    "autoImportComponentScript": true,
+    "retainStagingDir": true,
+    "createPackage": false,
+    "plugins": [
+        "rooibos-roku"
+    ],
+    "rooibos": {
+        "isRecordingCodeCoverage": false,
+        "isGlobalMethodMockingEnabled": true,
+        "testsFilePattern": null,
+        "tags": [
+            "!integration",
+            "!deprecated",
+            "!fixme"
+        ],
+        "showOnlyFailures": true,
+        "catchCrashes": true,
+        "lineWidth": 70,
+        "failFast": false,
+        "sendHomeOnFinish": false,
+        "colorizeOutput": true,
+        "reporters": [
+            "mocha"
+        ]
+    }
 }

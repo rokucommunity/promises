@@ -494,6 +494,124 @@ namespace promises
         }
     end function
 
+    sub setMessagePort(port as dynamic)
+        m.__promises__promisesPort = port
+    end sub
+
+    function getMessagePort() as dynamic
+        return m.__promises__promisesPort
+    end function
+
+    ' First, consume and process all promise events from the front of the queue.
+    ' This method is similar to the GetMessage() method, but the returned object (if not invalid) remains in the message queue.
+    ' A later call to WaitMessage(), GetMessage() or PeekMessage() will return the same message.
+    function peekMessage(port as dynamic) as dynamic
+        while true
+            message = port.peekMessage()
+
+            'if this is a promise event, process it and peek again
+            if promises.isPromiseEvent(message) then
+                'remove the message from the queue and process it
+                message = port.getMessage()
+                promises.internal.notifyListeners(message)
+                continue while
+            end if
+
+            return message
+        end while
+        return invalid
+    end function
+
+
+    ' First, consume and process all promise events from the front of the queue.
+    ' Then, if an event object is available, it is returned. Otherwise `invalid` is returned. The method returns immediately in either case and does not wait.
+    function getMessage(port as dynamic) as dynamic
+        if promises.peekMessage(port) <> invalid then
+            return port.getMessage()
+        end if
+
+        return invalid
+    end function
+
+
+    ' Same capabilities as the native `wait()` function, except that promise events are automatically processed and removed from its registered `roMessagePort` provided in `promises.setMessagePort()`.
+    function wait2(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
+        promisesPort = promises.getMessagePort()
+        'bs:disable-next-line
+        utils = createObject("roUtils") '
+        portIsPromisesPort = false
+
+        ' if the promise port is the same as the supplied port (and we can actually use roUtils to compare same-ness)
+        if utils <> invalid and utils.isSameObject(port, promisesPort) then
+            portIsPromisesPort = true
+        end if
+
+        timespan = createObject("roTimeSpan")
+
+        while true
+            currentDuration = timespan.TotalMilliseconds()
+            'if we are not waiting indefinitely
+            if timeoutMilliseconds > 0 then
+                ' if the duration has exceeded the wait time, exit and return invalid
+                if currentDuration >= timeoutMilliseconds then
+                    return invalid
+
+                    'the duration has not exceeded the wait time. compute how much time we have left
+                else
+                    thisTickTimeout = timeoutMilliseconds - currentDuration
+                end if
+            else
+                thisTickTimeout = timeoutMilliseconds
+            end if
+            'ensure we don't wait too long in a single tick (so promises still have time to resolve)
+            if thisTickTimeout = 0 or thisTickTimeout > 200 then
+                thisTickTimeout = 200
+            else
+                thisTickTimeout = timeoutMilliseconds
+            end if
+
+            'if the port we're waiting on is the promises port, then no need for the double-latch
+            if portIsPromisesPort then
+                event = wait(timeoutMilliseconds, port)
+                if promises.isPromiseEvent(event) then
+                    promises.internal.notifyListeners(event)
+                    continue while
+                end if
+                return event
+            else
+                'flush all pending promises on the promise port
+                promises.peekMessage(promises.getMessagePort())
+
+                'wait a little bit for an event on the supplied port
+                event = wait(thisTickTimeout, port)
+
+                'if the message was a promise event, handle it
+                if promises.isPromiseEvent(event) then
+                    promises.internal.notifyListeners(event)
+                    continue while
+                else
+                    'it's not a promise event! return it
+                    return event
+                end if
+            end if
+        end while
+        return invalid
+    end function
+
+    ' function closeAllTheThings() as dynamic
+    '     unhandledMessages = []
+    '     while true
+    '         message = wait(timeout, port)
+    '         if promises.isPromiseEvent(message) then
+    '             promises.internal.notifyListeners(message)
+    '             continue while
+    '         else
+    '             unhandledMessages.push(message)
+    '         end if
+    '     end while
+    '     return unhandledMessages
+    ' end function
+
     ' Makes sure the value supplied is a promise
     function ensurePromise(value as object) as object
         if promises.isPromise(value) then return value
@@ -578,15 +696,18 @@ namespace promises.internal
 
         ' Only create storage and register observers if it does not exist
         if storage = invalid then
-            ' unregister any observers on the promise to prevent multiple callbacks
-            promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
-            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event as dynamic)
-                'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
-                promises.internal.delay(sub(context as dynamic)
-                    promises.internal.notifyListeners(context.event)
-                end sub, { event: event })
-            end sub, [promises.internal.PromiseField.promiseResult])
-
+            if m.__promises__promisesPort <> invalid then
+                promise.observeFieldScoped(promises.internal.PromiseField.promiseState, m.__promises__promisesPort, [promises.internal.PromiseField.promiseResult])
+            else
+                ' unregister any observers on the promise to prevent multiple callbacks
+                promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
+                promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event as dynamic)
+                    'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
+                    promises.internal.delay(sub(context as dynamic)
+                        promises.internal.notifyListeners(context.event)
+                    end sub, { event: event })
+                end sub, [promises.internal.PromiseField.promiseResult])
+            end if
             storage = {
                 promise: promise
                 thenListeners: []
@@ -626,9 +747,13 @@ namespace promises.internal
             promiseState = promise.promiseState
             'trigger a change if the promise is already resolved
             if promiseState = promises.PromiseState.resolved or promiseState = promises.PromiseState.rejected then
-                promises.internal.delay(sub (details as object)
-                    details.promise.promiseState = details.promiseState
-                end sub, { promise: promise, promiseState: promiseState })
+                if m.__promises__promisesPort <> invalid then
+                    promise.promiseState = promiseState
+                else
+                    promises.internal.delay(sub (details as object)
+                        details.promise.promiseState = details.promiseState
+                    end sub, { promise: promise, promiseState: promiseState })
+                end if
             end if
             #if PROMISES_DEBUG
                 print "[promises.watch]", newPromise.id, "is watching", promise.id, eventName
@@ -691,9 +816,13 @@ namespace promises.internal
             if promises.internal.hasStorage(originalPromise) then
                 ' There were listeners added as a result of some of the callback notifications
                 ' Re-trigger the notification process for the new listeners
-                promises.internal.delay(sub (event as object)
+                if m.__promises__promisesPort <> invalid then
                     promises.internal.notifyListeners(event)
-                end sub, event)
+                else
+                    promises.internal.delay(sub (event as object)
+                        promises.internal.notifyListeners(event)
+                    end sub, event)
+                end if
             end if
         end if
     end sub
@@ -752,7 +881,23 @@ namespace promises.internal
                             end if
                         end try
                     else
-                        callbackResult = callback(promiseValue)
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback(promiseValue)
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
+                                callbackResult = callback(promiseValue, 0) ' 0 is the safest default value to pass in case of wrong number of parameters
+                            else
+                                promises.internal.logCrashIfEnabled(error)
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     end if
 
                     '.finally callback takes 1 optional parameter (`context`)
@@ -777,7 +922,23 @@ namespace promises.internal
                             end if
                         end try
                     else
-                        callbackResult = callback()
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback()
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
+                                callbackResult = callback(0) ' 0 is the safest default value to pass in case of wrong number of parameters
+                            else
+                                promises.internal.logCrashIfEnabled(error)
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     end if
                 end if
             catch e
