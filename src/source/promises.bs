@@ -752,7 +752,23 @@ namespace promises.internal
                             end if
                         end try
                     else
-                        callbackResult = callback(promiseValue)
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback(promiseValue)
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
+                                callbackResult = callback(promiseValue, 0) ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
+                            else
+                                promises.internal.logCrashIfEnabled(error)
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     end if
 
                     '.finally callback takes 1 optional parameter (`context`)
@@ -777,7 +793,23 @@ namespace promises.internal
                             end if
                         end try
                     else
-                        callbackResult = callback()
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback()
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
+                                callbackResult = callback(0) ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
+                            else
+                                promises.internal.logCrashIfEnabled(error)
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     end if
                 end if
             catch e

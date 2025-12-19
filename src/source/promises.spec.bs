@@ -1290,7 +1290,31 @@ namespace tests
         end sub
 
         @async
-        @it("recovered on wrong num of callback args")
+        @only()
+        @it("recovers when did NOT send context, but DID define the parameter (testing multiple param types")
+        sub _()
+            getGlobalAA().myCount = 0
+            promises.onFinally(promises.all([
+                'these will work
+                promises.onThen(promises.resolve("resolved"), sub(value, context): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as dynamic): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as object): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as integer): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as longinteger): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as float): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as double): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as boolean): m.myCount++ : end sub),
+                'these will not, that's okay, can't solve everything
+                promises.onThen(promises.resolve("resolved"), sub(value, context as function): m.myCount++ : end sub),
+                promises.onThen(promises.resolve("resolved"), sub(value, context as string): m.myCount++ : end sub),
+            ]), sub(results)
+                m.testSuite.assertEqual(getGlobalAA().myCount, 8)
+                m.testSuite.done()
+            end sub)
+        end sub
+
+        @async
+        @it("recovers when DID send context, but did NOT define the parameter")
         sub _()
             context = {}
             promises.onThen(promises.resolve("resolved"), sub(value)
@@ -1337,7 +1361,41 @@ namespace tests
         end sub
 
         @async
-        @it("recovered on wrong num of callback args")
+        @it("recovers when did NOT send context, but DID define the parameter")
+        sub _()
+            promises.onCatch(promises.reject("rejected"), sub(value, context)
+                m.testSuite.assertEqual(value, "rejected")
+                m.testSuite.done()
+            end sub)
+        end sub
+
+        @async
+        @only()
+        @it("recovers when did NOT send context, but DID define the parameter (testing multiple param types")
+        sub _()
+            getGlobalAA().myCount = 0
+            promises.onFinally(promises.all([
+                'these will work
+                promises.onCatch(promises.reject("rejected"), sub(value, context): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as dynamic): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as object): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as integer): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as longinteger): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as float): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as double): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as boolean): m.myCount++ : end sub),
+                'these will not, that's okay, can't solve everything
+                promises.onCatch(promises.reject("rejected"), sub(value, context as function): m.myCount++ : end sub),
+                promises.onCatch(promises.reject("rejected"), sub(value, context as string): m.myCount++ : end sub),
+            ]), sub(results)
+                m.testSuite.assertEqual(getGlobalAA().myCount, 8)
+                m.testSuite.done()
+            end sub)
+        end sub
+
+
+        @async
+        @it("recovers when DID send context, but did NOT define the parameter")
         sub _()
             context = {}
             promises.onCatch(promises.reject("rejected"), sub(value)
@@ -1387,12 +1445,36 @@ namespace tests
         end sub
 
         @async
-        @it("recovered on wrong num of callback args")
+        @it("recovers when DID send context, but did NOT define the parameter")
         sub _()
             context = {}
             promises.onFinally(promises.resolve("resolved"), sub()
                 m.testSuite.done()
             end sub, context)
+        end sub
+
+        @async
+        @only()
+        @it("recovers when did NOT send context, but DID define the parameter (testing multiple param types")
+        sub _()
+            getGlobalAA().myCount = 0
+            promises.onFinally(promises.all([
+                'these will work
+                promises.onFinally(promises.resolve("resolved"), sub(context): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as dynamic): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as object): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as integer): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as longinteger): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as float): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as double): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as boolean): m.myCount++ : end sub),
+                'these will not, that's okay, can't solve everything
+                promises.onFinally(promises.resolve("resolved"), sub(context as function): m.myCount++ : end sub),
+                promises.onFinally(promises.resolve("resolved"), sub(context as string): m.myCount++ : end sub),
+            ]), sub(results)
+                m.testSuite.assertEqual(getGlobalAA().myCount, 8)
+                m.testSuite.done()
+            end sub)
         end sub
 
         @async
