@@ -13,8 +13,9 @@
             "enableDebuggerAutoRecovery": true,
             "stopDebuggerOnAppExit": true,
             "injectRaleTrackerTask": false,
-            "enableDebugProtocol": true
-        }, {
+            "enableDebugProtocol": true,
+        },
+        {
             "name": "Demo App",
             "type": "brightscript",
             "request": "launch",
