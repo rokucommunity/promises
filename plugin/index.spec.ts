@@ -285,4 +285,108 @@ describe('roku-promises-plugin', () => {
             expect(diags).to.have.lengthOf(1);
         });
     });
+
+    const CHAIN_RETURN_CODE = promisesPlugin.DiagnosticCode.ChainMissingToPromise;
+
+    describe('chain .toPromise()', () => {
+        it('no warning when .toPromise() is called', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).then(function(value)
+                    end function).toPromise()
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.be.empty;
+        });
+
+        it('no warning when chain result is not returned', () => {
+            program.setFile('source/test.bs', inSub(`
+                promises.chain(promise).then(function(value)
+                end function)
+            `));
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.be.empty;
+        });
+
+        it('warns when .then() result is returned without .toPromise()', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).then(function(value)
+                    end function)
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+
+        it('warns when .catch() result is returned without .toPromise()', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).catch(function(err)
+                    end function)
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+
+        it('warns when multi-step chain is returned without .toPromise()', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).then(function(value)
+                    end function).catch(function(err)
+                    end function)
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+
+        it('warns when chain root is returned directly without any method call', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise)
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+
+        it('warns inside a .then() callback that returns a sub-chain without .toPromise()', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).then(function(value)
+                        return promises.chain(promise).then(function(inner)
+                        end function)
+                    end function).toPromise()
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+
+        it('no warning for an unrelated object with a .then() method', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    builder = { then: function(cb) : return m : end function }
+                    return builder.then(myCallback)
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.be.empty;
+        });
+
+        it('warns when using ropm alias without .toPromise()', () => {
+            program.setFile('roku_modules/myAlias/source/promises.brs', '');
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return myAlias_chain(promise).then(function(value)
+                    end function)
+                end function
+            `);
+            program.validate();
+            expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+    });
 });

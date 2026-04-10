@@ -221,7 +221,29 @@ promises.chain(usernamePromise, context).then(function(response, ctx)
 end function)
 ```
 
-> **Note:** The plugin only flags *inline* `function`/`sub` literals. Callbacks passed as variable references are skipped — it can't statically verify their signature.
+> **Note:** The plugin only flags *inline* `function`/`sub` literals for the context-param check. Callbacks passed as variable references are skipped — it can't statically verify their signature.
+
+### Missing `.toPromise()` on return (PRMS1002)
+
+The plugin also warns when a chain builder is returned from a function without calling `.toPromise()` first. The chain builder is a plain AA — returning it instead of the underlying Promise node is almost always a bug:
+
+```brighterscript
+' BAD — returns the chain builder AA, not a Promise node
+function loadData() as object
+    return promises.chain(fetchData()).then(function(result)
+        return promises.resolve(result.items)
+    end function)
+end function
+
+' GOOD — .toPromise() unwraps the chain back to a Promise
+function loadData() as object
+    return promises.chain(fetchData()).then(function(result)
+        return promises.resolve(result.items)
+    end function).toPromise()
+end function
+```
+
+This also catches fire-and-forget chains stored in variables that are accidentally returned, and sub-chains returned from inside a `.then()` callback.
 
 ### Setup
 
@@ -260,14 +282,19 @@ Multiple aliases are also supported:
 module.exports = promisesPlugin({ alias: ['promises', 'myProm'] });
 ```
 
-### Diagnostic code
+### Diagnostic codes
 
-The plugin emits diagnostic code **PRMS1001** (`promisesPlugin.DiagnosticCode.ContextParamMissing`). You can reference this in `bsconfig.json` to suppress it in specific files if needed:
+| Code | Constant | Description |
+|------|----------|-------------|
+| `PRMS1001` | `DiagnosticCode.ContextParamMissing` | Context passed but inline callback has no parameter to receive it |
+| `PRMS1002` | `DiagnosticCode.ChainMissingToPromise` | Chain result returned without `.toPromise()` |
+
+You can suppress specific codes in `bsconfig.json`:
 
 ```json
 {
     "diagnosticFilters": [
-        { "src": "source/legacy/**/*.bs", "codes": ["PRMS1001"] }
+        { "src": "source/legacy/**/*.bs", "codes": ["PRMS1001", "PRMS1002"] }
     ]
 }
 ```

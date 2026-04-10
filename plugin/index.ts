@@ -6,6 +6,7 @@ import {
     type CallExpression,
     type Expression,
     type LiteralExpression,
+    type ReturnStatement,
     isBrsFile,
     WalkMode,
     createVisitor,
@@ -63,6 +64,8 @@ const CHAIN_BUILDER_METHODS = new Set(['then', 'catch', 'finally', 'topromise'])
 enum PromisesDiagnosticCode {
     /** A context argument was passed but the inline callback has no parameter to receive it. */
     ContextParamMissing = 'PRMS1001',
+    /** A chain expression was returned without calling `.toPromise()` first. */
+    ChainMissingToPromise = 'PRMS1002',
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,6 +215,55 @@ function findChainCallWithContext(expr: Expression, namespaces: string[]): CallE
     return null;
 }
 
+/**
+ * Returns true if `expr` is a direct call to our `chain()` function
+ * (either namespace-style `promises.chain(...)` or flat-style `alias_chain(...)`).
+ */
+function isOurChainRoot(expr: Expression, namespaces: string[]): boolean {
+    if (!isCallExpression(expr)) {
+        return false;
+    }
+    const ce = expr as CallExpression;
+    if (isDottedGetExpression(ce.callee)) {
+        const method = ce.callee.name.text.toLowerCase();
+        if (method === 'chain') {
+            const lowerNs = (isVariableExpression(ce.callee.obj)
+                ? (ce.callee.obj as any).name?.text as string
+                : ''
+            ).toLowerCase();
+            return namespaces.some(n => n.toLowerCase() === lowerNs);
+        }
+    } else if (isVariableExpression(ce.callee)) {
+        const lowerName = ((ce.callee as any).name?.text as string ?? '').toLowerCase();
+        return namespaces.some(n => lowerName === `${n.toLowerCase()}_chain`);
+    }
+    return false;
+}
+
+/**
+ * Returns true if `expr` is a chain builder call (`.then/.catch/.finally`)
+ * rooted at one of our `chain()` functions, and does NOT end in `.toPromise()`.
+ * Such an expression yields a chain builder AA, not a Promise node.
+ */
+function isUnterminatedChainExpr(expr: Expression, namespaces: string[]): boolean {
+    if (!isCallExpression(expr)) {
+        return false;
+    }
+    const ce = expr as CallExpression;
+    if (!isDottedGetExpression(ce.callee)) {
+        return false;
+    }
+    const method = ce.callee.name.text.toLowerCase();
+    if (method === 'topromise') {
+        return false;
+    }
+    if (method === 'then' || method === 'catch' || method === 'finally') {
+        const obj = ce.callee.obj;
+        return isOurChainRoot(obj, namespaces) || isUnterminatedChainExpr(obj, namespaces);
+    }
+    return false;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Diagnostic construction
 // ─────────────────────────────────────────────────────────────────────────────
@@ -321,6 +373,28 @@ function checkFile(file: BscFile, namespaces: string[]): void {
                     if (diag) {
                         diagnostics.push(diag);
                     }
+                }
+            },
+
+            // ──────────────────────────────────────────────────────────
+            // Case 3: returning a chain builder without .toPromise()
+            //
+            //   return promises.chain(promise, ctx).then(cb)  ← missing .toPromise()
+            //   return promises.chain(promise)                ← same issue
+            // ──────────────────────────────────────────────────────────
+            ReturnStatement: function ReturnStatement(node: ReturnStatement) {
+                if (!node.value || !node.range) {
+                    return;
+                }
+                if (isOurChainRoot(node.value, namespaces) || isUnterminatedChainExpr(node.value, namespaces)) {
+                    diagnostics.push({
+                        file: file,
+                        range: node.range,
+                        severity: DiagnosticSeverity.Warning,
+                        source: 'roku-promises-plugin',
+                        code: PromisesDiagnosticCode.ChainMissingToPromise,
+                        message: `Chain result returned without '.toPromise()'. The chain builder is not a Promise node — add '.toPromise()' at the end to return the underlying Promise.`,
+                    });
                 }
             }
         }),
