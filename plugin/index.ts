@@ -10,7 +10,10 @@ import {
     type FunctionExpression,
     type OnGetCodeActionsEvent,
     type InsertChange,
+    type DeleteChange,
     type Position,
+    type ProvideHoverEvent,
+    type ProvideCompletionsEvent,
     isBrsFile,
     WalkMode,
     createVisitor,
@@ -63,15 +66,14 @@ const THEN_CATCH_FNS = new Set(['onthen', 'oncatch']);
 /** Functions where context is passed as the 1st callback param: (context) */
 const FINALLY_FNS = new Set(['onfinally']);
 
-/** Chain builder methods that pass context through from chain() */
-const CHAIN_BUILDER_METHODS = new Set(['then', 'catch', 'finally', 'topromise']);
-
 /** Diagnostic codes emitted by the promises plugin. */
 enum PromisesDiagnosticCode {
     /** A context argument was passed but the inline callback has no parameter to receive it. */
     ContextParamMissing = 'PRMS1001',
     /** A chain expression was returned without calling `.toPromise()` first. */
     ChainMissingToPromise = 'PRMS1002',
+    /** The inline callback has more parameters than will be provided — the extra params will crash at runtime. */
+    ExtraCallbackParam = 'PRMS1003',
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,63 +167,6 @@ function matchPromiseFn(
 }
 
 /**
- * Walks backwards up a method call chain to find the root `chain()` call.
- *
- * ```brightscript
- * promises.chain(promise, ctx)   ← we want this (namespace style)
- * promises_chain(promise, ctx)   ← or this (flat/ropm style)
- *     .then(cb1)
- *     .catch(cb2)                ← walking up from here
- * ```
- *
- * Returns the `chain()` `CallExpression` only if it was called with a
- * non-`invalid` context argument, otherwise returns `null`.
- */
-function findChainCallWithContext(expr: Expression, namespaces: string[]): CallExpression | null {
-    if (!isCallExpression(expr)) {
-        return null;
-    }
-
-    const ce = expr as CallExpression;
-
-    if (isDottedGetExpression(ce.callee)) {
-        const method = ce.callee.name.text.toLowerCase();
-
-        // Keep walking up through chain builder methods
-        if (CHAIN_BUILDER_METHODS.has(method)) {
-            return findChainCallWithContext(ce.callee.obj, namespaces);
-        }
-
-        // Namespace-style chain call: promises.chain(...) / alias.chain(...)
-        if (method === 'chain') {
-            const lowerNs = (isVariableExpression(ce.callee.obj)
-                ? (ce.callee.obj as any).name?.text as string
-                : ''
-            ).toLowerCase();
-            if (namespaces.some(n => n.toLowerCase() === lowerNs)) {
-                const ctxArg = ce.args[1];
-                if (ctxArg && !isInvalidLiteral(ctxArg)) {
-                    return ce;
-                }
-            }
-        }
-    } else if (isVariableExpression(ce.callee)) {
-        // Flat-function style: promises_chain(...) / alias_chain(...)
-        const lowerName = ((ce.callee as any).name?.text as string ?? '').toLowerCase();
-        for (const ns of namespaces) {
-            if (lowerName === `${ns.toLowerCase()}_chain`) {
-                const ctxArg = ce.args[1];
-                if (ctxArg && !isInvalidLiteral(ctxArg)) {
-                    return ce;
-                }
-            }
-        }
-    }
-
-    return null;
-}
-
-/**
  * Returns true if `expr` is a direct call to our `chain()` function
  * (either namespace-style `promises.chain(...)` or flat-style `alias_chain(...)`).
  */
@@ -271,6 +216,126 @@ function isUnterminatedChainExpr(expr: Expression, namespaces: string[]): boolea
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Hover / completion helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+function isPositionInRange(
+    pos: { line: number; character: number },
+    range: { start: { line: number; character: number }; end: { line: number; character: number } }
+): boolean {
+    if (pos.line < range.start.line || pos.line > range.end.line) {
+        return false;
+    }
+    if (pos.line === range.start.line && pos.character < range.start.character) {
+        return false;
+    }
+    if (pos.line === range.end.line && pos.character > range.end.character) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Walks backwards up a method call chain to find the root `chain()` call,
+ * regardless of whether a context argument was provided.
+ */
+function findChainRoot(expr: Expression, namespaces: string[]): CallExpression | null {
+    if (!isCallExpression(expr)) {
+        return null;
+    }
+    const ce = expr as CallExpression;
+
+    if (isDottedGetExpression(ce.callee)) {
+        const method = ce.callee.name.text.toLowerCase();
+        if (method === 'then' || method === 'catch' || method === 'finally') {
+            return findChainRoot(ce.callee.obj, namespaces);
+        }
+        if (method === 'chain') {
+            const lowerNs = (isVariableExpression(ce.callee.obj)
+                ? (ce.callee.obj as any).name?.text as string
+                : ''
+            ).toLowerCase();
+            if (namespaces.some(n => n.toLowerCase() === lowerNs)) {
+                return ce;
+            }
+        }
+    } else if (isVariableExpression(ce.callee)) {
+        const lowerName = ((ce.callee as any).name?.text as string ?? '').toLowerCase();
+        for (const ns of namespaces) {
+            if (lowerName === `${ns.toLowerCase()}_chain`) {
+                return ce;
+            }
+        }
+    }
+
+    return null;
+}
+
+interface PromiseCallContext {
+    fnType: 'thenCatch' | 'finally' | 'chain';
+    argIndex: number;
+}
+
+/**
+ * Given text on the current line up to the cursor, returns which promise
+ * function we're inside and which argument position the cursor is at.
+ * Returns null if the cursor is not inside a recognized promise function call.
+ */
+function detectPromiseCallContext(beforeCursor: string, namespaces: string[]): PromiseCallContext | null {
+    // Walk backwards to find the last unclosed '('
+    let depth = 0;
+    let parenIdx = -1;
+    for (let i = beforeCursor.length - 1; i >= 0; i--) {
+        const ch = beforeCursor[i];
+        if (ch === ')') {
+            depth++;
+        } else if (ch === '(') {
+            if (depth === 0) {
+                parenIdx = i;
+                break;
+            }
+            depth--;
+        }
+    }
+    if (parenIdx === -1) {
+        return null;
+    }
+
+    // Text before the open paren identifies the function being called
+    const callSite = beforeCursor.slice(0, parenIdx).trimEnd().toLowerCase();
+    // Count commas at depth 0 inside the parens to determine argument index
+    const argText = beforeCursor.slice(parenIdx + 1);
+    let argIndex = 0;
+    let innerDepth = 0;
+    for (const ch of argText) {
+        if (ch === '(' || ch === '[') {
+            innerDepth++;
+        } else if (ch === ')' || ch === ']') {
+            innerDepth--;
+        } else if (ch === ',' && innerDepth === 0) {
+            argIndex++;
+        }
+    }
+
+    for (const ns of namespaces) {
+        const lns = ns.toLowerCase();
+        if (callSite.endsWith(`${lns}.onthen`) || callSite.endsWith(`${lns}_onthen`) ||
+            callSite.endsWith(`${lns}.oncatch`) || callSite.endsWith(`${lns}_oncatch`)) {
+            return { fnType: 'thenCatch', argIndex: argIndex };
+        }
+        if (callSite.endsWith(`${lns}.onfinally`) || callSite.endsWith(`${lns}_onfinally`)) {
+            return { fnType: 'finally', argIndex: argIndex };
+        }
+        if (callSite.endsWith(`${lns}.chain`) || callSite.endsWith(`${lns}_chain`)) {
+            return { fnType: 'chain', argIndex: argIndex };
+        }
+    }
+
+    return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Diagnostic construction
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -313,6 +378,45 @@ function makeDiagnostic(
     };
 }
 
+/**
+ * Builds a PRMS1003 diagnostic for a callback that declares more parameters
+ * than the promise function will supply.
+ *
+ * The quick-fix data holds a range to delete:
+ *   - `thenCatch` (keep param[0]): delete from `params[0].end` → `rightParen.start`
+ *   - `finally`   (keep nothing):  delete from `leftParen.end` → `rightParen.start`
+ */
+function makeExtraParamDiagnostic(
+    displayName: string,
+    isFinally: boolean,
+    callbackArg: Expression,
+    file: BscFile,
+): BsDiagnostic | null {
+    if (!callbackArg.range) {
+        return null;
+    }
+    const fn = callbackArg as FunctionExpression;
+
+    let deleteStart: Position | undefined;
+    const deleteEnd: Position | undefined = fn.rightParen.range?.start;
+
+    if (isFinally) {
+        deleteStart = fn.leftParen.range?.end;
+    } else {
+        deleteStart = fn.parameters[0]?.range?.end;
+    }
+
+    return {
+        file: file,
+        range: callbackArg.range,
+        severity: DiagnosticSeverity.Error,
+        source: 'roku-promises-plugin',
+        code: PromisesDiagnosticCode.ExtraCallbackParam,
+        message: `'${displayName}' does not pass a context argument, but the inline callback declares extra parameter(s) that will never receive a value — this will crash at runtime. Remove the extra parameter(s) or pass a context argument.`,
+        data: (deleteStart && deleteEnd) ? { deleteRange: { start: deleteStart, end: deleteEnd } } : undefined,
+    };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // File checker
 // ─────────────────────────────────────────────────────────────────────────────
@@ -336,17 +440,25 @@ function checkFile(file: BscFile, namespaces: string[]): void {
                 if (match) {
                     // context is the 3rd argument (index 2)
                     const ctxArg = node.args[2];
-                    if (ctxArg && !isInvalidLiteral(ctxArg)) {
-                        const cbArg = node.args[1];
-                        if (cbArg) {
-                            const paramCount = getInlineParamCount(cbArg);
-                            if (paramCount !== null) {
-                                const need = match.type === 'finally' ? 1 : 2;
-                                if (paramCount < need) {
-                                    const diag = makeDiagnostic(match.displayName, match.type === 'finally', cbArg, file);
-                                    if (diag) {
-                                        diagnostics.push(diag);
-                                    }
+                    const hasContext = Boolean(ctxArg && !isInvalidLiteral(ctxArg));
+                    const cbArg = node.args[1];
+                    if (cbArg) {
+                        const paramCount = getInlineParamCount(cbArg);
+                        if (paramCount !== null) {
+                            const isFinally = match.type === 'finally';
+                            const need = isFinally ? 1 : 2;  // params required when context is present
+                            const max = need - 1;             // params allowed when context is absent
+                            if (hasContext && paramCount < need) {
+                                // PRMS1001: context passed but callback won't receive it
+                                const diag = makeDiagnostic(match.displayName, isFinally, cbArg, file);
+                                if (diag) {
+                                    diagnostics.push(diag);
+                                }
+                            } else if (!hasContext && paramCount > max) {
+                                // PRMS1003: no context but callback declares extra params that will crash
+                                const diag = makeExtraParamDiagnostic(match.displayName, isFinally, cbArg, file);
+                                if (diag) {
+                                    diagnostics.push(diag);
                                 }
                             }
                         }
@@ -374,7 +486,8 @@ function checkFile(file: BscFile, namespaces: string[]): void {
                     return;
                 }
 
-                if (!findChainCallWithContext(callee.obj, namespaces)) {
+                const chainRoot = findChainRoot(callee.obj, namespaces);
+                if (!chainRoot) {
                     return;
                 }
 
@@ -389,9 +502,20 @@ function checkFile(file: BscFile, namespaces: string[]): void {
                 }
 
                 const isChainFinally = method === 'finally';
+                const chainCtxArg = chainRoot.args[1];
+                const chainHasContext = Boolean(chainCtxArg && !isInvalidLiteral(chainCtxArg));
                 const need = isChainFinally ? 1 : 2;
-                if (paramCount < need) {
+                const max = need - 1;
+
+                if (chainHasContext && paramCount < need) {
+                    // PRMS1001: context passed to chain() but callback won't receive it
                     const diag = makeDiagnostic(`.${method}`, isChainFinally, cbArg, file);
+                    if (diag) {
+                        diagnostics.push(diag);
+                    }
+                } else if (!chainHasContext && paramCount > max) {
+                    // PRMS1003: chain() has no context but callback declares extra params that will crash
+                    const diag = makeExtraParamDiagnostic(`.${method}`, isChainFinally, cbArg, file);
                     if (diag) {
                         diagnostics.push(diag);
                     }
@@ -541,6 +665,18 @@ function promisesPlugin(options: PromisesPluginOptions = {}): Plugin {
                             newText: diag.data.insertText,
                         } as InsertChange],
                     }));
+                } else if (diag.code === PromisesDiagnosticCode.ExtraCallbackParam && diag.data?.deleteRange) {
+                    event.codeActions.push(codeActionUtil.createCodeAction({
+                        title: 'Remove extra parameter(s)',
+                        diagnostics: [diag],
+                        isPreferred: true,
+                        kind: CodeActionKind.QuickFix,
+                        changes: [{
+                            type: 'delete',
+                            filePath: srcPath,
+                            range: diag.data.deleteRange,
+                        } as DeleteChange],
+                    }));
                 } else if (diag.code === PromisesDiagnosticCode.ChainMissingToPromise && diag.data?.insertPosition) {
                     event.codeActions.push(codeActionUtil.createCodeAction({
                         title: 'Add \'.toPromise()\'',
@@ -579,6 +715,22 @@ function promisesPlugin(options: PromisesPluginOptions = {}): Plugin {
                 }));
             }
 
+            const allExtraParam = allFileDiags.filter(
+                d => d.code === PromisesDiagnosticCode.ExtraCallbackParam && d.data?.deleteRange
+            );
+            if (allExtraParam.length > 1) {
+                event.codeActions.push(codeActionUtil.createCodeAction({
+                    title: `Remove extra parameter(s) from all callbacks in file (${allExtraParam.length})`,
+                    diagnostics: allExtraParam,
+                    kind: CodeActionKind.QuickFix,
+                    changes: allExtraParam.map(d => ({
+                        type: 'delete',
+                        filePath: srcPath,
+                        range: d.data.deleteRange,
+                    } as DeleteChange)),
+                }));
+            }
+
             const allToPromise = allFileDiags.filter(
                 d => d.code === PromisesDiagnosticCode.ChainMissingToPromise && d.data?.insertPosition
             );
@@ -595,7 +747,142 @@ function promisesPlugin(options: PromisesPluginOptions = {}): Plugin {
                     } as InsertChange)),
                 }));
             }
-        }
+        },
+
+        // ── Hover documentation for .then / .catch / .finally ─────────────────
+        provideHover: function provideHover(event: ProvideHoverEvent) {
+            if (!isBrsFile(event.file)) {
+                return;
+            }
+            const pos = event.position;
+
+            (event.file.ast as any).walk(
+                createVisitor({
+                    CallExpression: function CallExpression(node: CallExpression) {
+                        if (!isDottedGetExpression(node.callee)) {
+                            return;
+                        }
+                        const callee = node.callee;
+                        const methodLower = callee.name.text.toLowerCase();
+                        if (methodLower !== 'then' && methodLower !== 'catch' && methodLower !== 'finally') {
+                            return;
+                        }
+
+                        const nameRange = callee.name.range;
+                        if (!nameRange || !isPositionInRange(pos, nameRange)) {
+                            return;
+                        }
+
+                        const chainRoot = findChainRoot(callee.obj, namespaces);
+                        if (!chainRoot) {
+                            return;
+                        }
+
+                        const ctxArg = chainRoot.args[1];
+                        const hasContext = Boolean(ctxArg && !isInvalidLiteral(ctxArg));
+
+                        let sig: string;
+                        let docs: string;
+                        if (methodLower === 'then') {
+                            sig = hasContext
+                                ? `.then(function(value, context)\n    ' ...\nend function)`
+                                : `.then(function(value)\n    ' ...\nend function)`;
+                            docs = hasContext
+                                ? '- **value** — the resolved value\n- **context** — the value passed to `chain()`'
+                                : '- **value** — the resolved value';
+                        } else if (methodLower === 'catch') {
+                            sig = hasContext
+                                ? `.catch(function(error, context)\n    ' ...\nend function)`
+                                : `.catch(function(error)\n    ' ...\nend function)`;
+                            docs = hasContext
+                                ? '- **error** — the rejection value\n- **context** — the value passed to `chain()`'
+                                : '- **error** — the rejection value';
+                        } else {
+                            sig = hasContext
+                                ? `.finally(function(context)\n    ' ...\nend function)`
+                                : `.finally(function()\n    ' ...\nend function)`;
+                            docs = hasContext
+                                ? '- **context** — the value passed to `chain()`'
+                                : 'Called when the chain settles regardless of outcome.';
+                        }
+
+                        event.hovers.push({
+                            contents: `\`\`\`brightscript\n${sig}\n\`\`\`\n\n${docs}`,
+                            range: nameRange,
+                        });
+                    },
+                }),
+                { walkMode: WalkMode.visitAllRecursive }
+            );
+        },
+
+        // ── Callback snippet completions ──────────────────────────────────────
+        provideCompletions: function provideCompletions(event: ProvideCompletionsEvent) {
+            if (!isBrsFile(event.file)) {
+                return;
+            }
+            const text: string = (event.file as any).fileContents ?? '';
+            const lines = text.split(/\r?\n/);
+            const line = lines[event.position.line] ?? '';
+            const beforeCursor = line.slice(0, event.position.character);
+
+            const ctx = detectPromiseCallContext(beforeCursor, namespaces);
+            if (!ctx) {
+                return;
+            }
+
+            // insertTextFormat 2 = Snippet, kind 15 = Snippet (LSP constants)
+            // eslint-disable-next-line no-template-curly-in-string
+            const tabstop = (n: number, label: string) => `\${${n}:${label}}`;
+            if (ctx.fnType === 'thenCatch' && ctx.argIndex === 1) {
+                event.completions.push(
+                    {
+                        label: 'function(value, context)',
+                        detail: 'Callback with context parameter',
+                        insertText: `function(${tabstop(1, 'value')}, ${tabstop(2, 'context')})\n\t$0\nend function`,
+                        insertTextFormat: 2,
+                        kind: 15,
+                        sortText: '00',
+                    },
+                    {
+                        label: 'function(value)',
+                        detail: 'Callback (no context)',
+                        insertText: `function(${tabstop(1, 'value')})\n\t$0\nend function`,
+                        insertTextFormat: 2,
+                        kind: 15,
+                        sortText: '01',
+                    }
+                );
+            } else if (ctx.fnType === 'finally' && ctx.argIndex === 1) {
+                event.completions.push(
+                    {
+                        label: 'function(context)',
+                        detail: 'Finally callback with context',
+                        insertText: `function(${tabstop(1, 'context')})\n\t$0\nend function`,
+                        insertTextFormat: 2,
+                        kind: 15,
+                        sortText: '00',
+                    },
+                    {
+                        label: 'function()',
+                        detail: 'Finally callback (no context)',
+                        insertText: 'function()\n\t$0\nend function',
+                        insertTextFormat: 2,
+                        kind: 15,
+                        sortText: '01',
+                    }
+                );
+            } else if (ctx.fnType === 'chain' && ctx.argIndex === 1) {
+                event.completions.push({
+                    label: 'context',
+                    detail: 'Context value passed through the chain',
+                    insertText: tabstop(1, 'context'),
+                    insertTextFormat: 2,
+                    kind: 15,
+                    sortText: '00',
+                });
+            }
+        },
     };
 }
 
@@ -603,6 +890,8 @@ function promisesPlugin(options: PromisesPluginOptions = {}): Plugin {
 namespace promisesPlugin {
     /** The diagnostic code emitted when context is passed but the callback has no parameter to receive it. */
     export const MISSING_CONTEXT_PARAM_CODE = PromisesDiagnosticCode.ContextParamMissing;
+    /** The diagnostic code emitted when the callback declares extra parameters that will never receive a value. */
+    export const EXTRA_CALLBACK_PARAM_CODE = PromisesDiagnosticCode.ExtraCallbackParam;
     export import DiagnosticCode = PromisesDiagnosticCode;
     export type Options = PromisesPluginOptions;
 }

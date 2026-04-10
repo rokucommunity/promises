@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { type BsDiagnostic, type CodeAction, Program } from 'brighterscript';
+import { type BsDiagnostic, type CodeAction, DiagnosticSeverity, Program } from 'brighterscript';
 import promisesPlugin = require('./index');
 
 const DIAG_CODE = promisesPlugin.MISSING_CONTEXT_PARAM_CODE;
@@ -286,6 +286,91 @@ describe('roku-promises-plugin', () => {
         });
     });
 
+    // ── PRMS1003: extra callback params without context ───────────────────────
+
+    const EXTRA_PARAM_CODE = promisesPlugin.DiagnosticCode.ExtraCallbackParam;
+
+    function validateExtraParam(snippet: string) {
+        program.setFile('source/test.bs', inSub(snippet));
+        program.validate();
+        return program.getDiagnostics().filter(d => d.code === EXTRA_PARAM_CODE);
+    }
+
+    describe('PRMS1003: extra callback params without context', () => {
+        it('no diagnostic when onThen callback has 1 param and no context', () => {
+            expect(validateExtraParam(
+                'promises.onThen(promise, function(value) end function)'
+            )).to.be.empty;
+        });
+
+        it('no diagnostic when onFinally callback has 0 params and no context', () => {
+            expect(validateExtraParam(
+                'promises.onFinally(promise, function() end function)'
+            )).to.be.empty;
+        });
+
+        it('no diagnostic when callback is a variable reference (not inline)', () => {
+            expect(validateExtraParam(
+                'promises.onThen(promise, myCallback)'
+            )).to.be.empty;
+        });
+
+        it('errors when onThen callback has 2 params but no context', () => {
+            expect(validateExtraParam(
+                'promises.onThen(promise, function(value, ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('errors when onCatch callback has 2 params but no context', () => {
+            expect(validateExtraParam(
+                'promises.onCatch(promise, function(err, ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('errors when onFinally callback has 1 param but no context', () => {
+            expect(validateExtraParam(
+                'promises.onFinally(promise, function(ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('no diagnostic when .then callback has 1 param and chain has no context', () => {
+            expect(validateExtraParam(
+                'promises.chain(promise).then(function(value) end function)'
+            )).to.be.empty;
+        });
+
+        it('errors when .then callback has 2 params but chain has no context', () => {
+            expect(validateExtraParam(
+                'promises.chain(promise).then(function(value, ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('errors when .catch callback has 2 params but chain has no context', () => {
+            expect(validateExtraParam(
+                'promises.chain(promise).catch(function(err, ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('errors when .finally callback has 1 param but chain has no context', () => {
+            expect(validateExtraParam(
+                'promises.chain(promise).finally(function(ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('no diagnostic when .then callback has 2 params and chain context is invalid literal', () => {
+            expect(validateExtraParam(
+                'promises.chain(promise, invalid).then(function(value, ctx) end function)'
+            )).to.have.lengthOf(1);
+        });
+
+        it('diagnostic is an error (not a warning)', () => {
+            const diags = validateExtraParam(
+                'promises.onThen(promise, function(value, ctx) end function)'
+            );
+            expect(diags[0].severity).to.equal(DiagnosticSeverity.Error);
+        });
+    });
+
     // ── Shared code-action helpers ────────────────────────────────────────────
 
     /** Returns all newText strings across every workspace edit in the action. */
@@ -297,6 +382,19 @@ describe('roku-promises-plugin', () => {
             }
         }
         return result;
+    }
+
+    /** Returns the number of delete edits (newText === '') in the action. */
+    function deleteCount(action: CodeAction): number {
+        let count = 0;
+        for (const edits of Object.values(action.edit?.changes ?? {})) {
+            for (const edit of edits) {
+                if (edit.newText === '') {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     /** Validates the current file state and returns code actions at the first matching diagnostic. */
@@ -508,6 +606,59 @@ describe('roku-promises-plugin', () => {
                 end function
             `);
             const actions = codeActionsFor(CHAIN_RETURN_CODE);
+            const fixAll = actions.find(a => a.title.includes('all'));
+            expect(fixAll).to.be.undefined;
+        });
+    });
+
+    describe('code actions: PRMS1003 remove extra parameter', () => {
+        it('offers "Remove extra parameter(s)" quick fix for onThen', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onThen(promise, function(value, ctx) end function)'
+            ));
+            const actions = codeActionsFor(EXTRA_PARAM_CODE);
+            const fix = actions.find(a => a.title === 'Remove extra parameter(s)');
+            expect(fix).to.exist;
+            expect(fix!.isPreferred).to.be.true;
+            expect(deleteCount(fix!)).to.equal(1);
+        });
+
+        it('offers "Remove extra parameter(s)" quick fix for onFinally', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onFinally(promise, function(ctx) end function)'
+            ));
+            const actions = codeActionsFor(EXTRA_PARAM_CODE);
+            const fix = actions.find(a => a.title === 'Remove extra parameter(s)');
+            expect(fix).to.exist;
+            expect(deleteCount(fix!)).to.equal(1);
+        });
+
+        it('offers "Remove extra parameter(s)" quick fix for chain .then', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.chain(promise).then(function(value, ctx) end function)'
+            ));
+            const actions = codeActionsFor(EXTRA_PARAM_CODE);
+            const fix = actions.find(a => a.title === 'Remove extra parameter(s)');
+            expect(fix).to.exist;
+            expect(deleteCount(fix!)).to.equal(1);
+        });
+
+        it('offers fix-all when multiple PRMS1003 diagnostics exist in the file', () => {
+            program.setFile('source/test.bs', inSub(`
+                promises.onThen(promise, function(value, ctx) end function)
+                promises.onCatch(promise, function(err, ctx) end function)
+            `));
+            const actions = codeActionsFor(EXTRA_PARAM_CODE);
+            const fixAll = actions.find(a => a.title.includes('all') && a.title.includes('(2)'));
+            expect(fixAll).to.exist;
+            expect(deleteCount(fixAll!)).to.equal(2);
+        });
+
+        it('does not offer fix-all when only one PRMS1003 exists', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onThen(promise, function(value, ctx) end function)'
+            ));
+            const actions = codeActionsFor(EXTRA_PARAM_CODE);
             const fixAll = actions.find(a => a.title.includes('all'));
             expect(fixAll).to.be.undefined;
         });
