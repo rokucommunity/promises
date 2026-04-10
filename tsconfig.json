@@ -15,7 +15,8 @@
         "allowSyntheticDefaultImports": true
     },
     "include": [
-        "scripts/**/*.ts"
+        "scripts/**/*.ts",
+        "plugin/**/*.ts"
     ],
     "ts-node": {
         "transpileOnly": true

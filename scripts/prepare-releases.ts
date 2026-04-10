@@ -15,9 +15,9 @@ async function run() {
     execSync('npm run build', { cwd: s`${__dirname}/..`, stdio: 'inherit' });
 
     setVersionNumber();
-    await removeBslib();
+    removeBslib();
     await createGithubReleaseZip();
-    await prepareForNpm();
+    prepareForNpm();
 
     execSync('npm pack', { cwd: s`${__dirname}/..`, stdio: 'inherit' });
 }
@@ -51,7 +51,7 @@ async function createGithubReleaseZip() {
     );
 }
 
-async function prepareForNpm() {
+function prepareForNpm() {
     //remove the `promises_` namespace
     replaceInFile(s`${distDir}/source/promises.brs`,
         [/\bpromises_/g, ''],

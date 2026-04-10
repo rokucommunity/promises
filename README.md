@@ -189,6 +189,115 @@ end function
 ## How it works
 While the promise spec is interoperable with any other promise node created by other libraries, the `promises` namespace is the true magic of the @rokucommunity/promises library. We have several helper functions that enable you to chain multiple promises together, very much in the same way as javascript promises.
 
+## BrighterScript Plugin
+
+`@rokucommunity/promises` ships with an optional [BrighterScript](https://github.com/rokucommunity/brighterscript) plugin that adds compile-time diagnostics to catch a common mistake: passing a `context` argument to `onThen`, `onCatch`, `onFinally`, or the chain API but forgetting to add the corresponding parameter to the inline callback.
+
+### What it catches
+
+```brighterscript
+' BAD — context is passed but the callback has no parameter to receive it
+promises.onThen(promise, function(response)
+    print response
+end function, context)
+
+' GOOD — the callback declares a second parameter to receive context
+promises.onThen(promise, function(response, ctx)
+    print response, ctx.username
+end function, context)
+```
+
+The same check applies to `onCatch`, `onFinally`, and the chain API:
+
+```brighterscript
+' BAD — chain has context but .then callback only takes one param
+promises.chain(usernamePromise, context).then(function(response)
+    print response
+end function)
+
+' GOOD
+promises.chain(usernamePromise, context).then(function(response, ctx)
+    print response, ctx
+end function)
+```
+
+> **Note:** The plugin only flags *inline* `function`/`sub` literals for the context-param check. Callbacks passed as variable references are skipped — it can't statically verify their signature.
+
+### Missing `.toPromise()` on return (PRMS1002)
+
+The plugin also warns when a chain builder is returned from a function without calling `.toPromise()` first. The chain builder is a plain AA — returning it instead of the underlying Promise node is almost always a bug:
+
+```brighterscript
+' BAD — returns the chain builder AA, not a Promise node
+function loadData() as object
+    return promises.chain(fetchData()).then(function(result)
+        return promises.resolve(result.items)
+    end function)
+end function
+
+' GOOD — .toPromise() unwraps the chain back to a Promise
+function loadData() as object
+    return promises.chain(fetchData()).then(function(result)
+        return promises.resolve(result.items)
+    end function).toPromise()
+end function
+```
+
+This also catches fire-and-forget chains stored in variables that are accidentally returned, and sub-chains returned from inside a `.then()` callback.
+
+### Setup
+
+**1. Add a plugin loader file** (e.g. `bsplugin-promises.js`) to your project root:
+
+```js
+const promisesPlugin = require('@rokucommunity/promises/plugin');
+module.exports = promisesPlugin();
+```
+
+**2. Reference it from `bsconfig.json`:**
+
+```json
+{
+    "plugins": ["./bsplugin-promises.js"]
+}
+```
+
+That's it. The plugin auto-detects the ropm alias by scanning `roku_modules/` — no further configuration needed for most projects.
+
+### ropm alias detection
+
+When you install via ropm with a custom alias (e.g. `npx ropm install promises@npm:@rokucommunity/promises --alias myProm`), the plugin detects it automatically by looking for `roku_modules/<alias>/source/promises.brs` in your project files. All comparisons are case-insensitive, matching BrightScript's own behavior.
+
+If auto-detection doesn't work for your setup (e.g. non-standard install path), supply the alias explicitly:
+
+```js
+// bsplugin-promises.js
+const promisesPlugin = require('@rokucommunity/promises/plugin');
+module.exports = promisesPlugin({ alias: 'myProm' });
+```
+
+Multiple aliases are also supported:
+
+```js
+module.exports = promisesPlugin({ alias: ['promises', 'myProm'] });
+```
+
+### Diagnostic codes
+
+| Code | Constant | Description |
+|------|----------|-------------|
+| `PRMS1001` | `DiagnosticCode.ContextParamMissing` | Context passed but inline callback has no parameter to receive it |
+| `PRMS1002` | `DiagnosticCode.ChainMissingToPromise` | Chain result returned without `.toPromise()` |
+
+You can suppress specific codes in `bsconfig.json`:
+
+```json
+{
+    "diagnosticFilters": [
+        { "src": "source/legacy/**/*.bs", "codes": ["PRMS1001", "PRMS1002"] }
+    ]
+}
+```
 
 ## Limitations
 ### no support for roMessagePort
