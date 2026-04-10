@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Program } from 'brighterscript';
+import { type BsDiagnostic, type CodeAction, Program } from 'brighterscript';
 import promisesPlugin = require('./index');
 
 const DIAG_CODE = promisesPlugin.MISSING_CONTEXT_PARAM_CODE;
@@ -286,6 +286,29 @@ describe('roku-promises-plugin', () => {
         });
     });
 
+    // ── Shared code-action helpers ────────────────────────────────────────────
+
+    /** Returns all newText strings across every workspace edit in the action. */
+    function insertedTexts(action: CodeAction): string[] {
+        const result: string[] = [];
+        for (const edits of Object.values(action.edit?.changes ?? {})) {
+            for (const edit of edits) {
+                result.push(edit.newText);
+            }
+        }
+        return result;
+    }
+
+    /** Validates the current file state and returns code actions at the first matching diagnostic. */
+    function codeActionsFor(code: string): CodeAction[] {
+        program.validate();
+        const diag = program.getDiagnostics().find(d => d.code === code) as BsDiagnostic;
+        if (!diag) {
+            return [];
+        }
+        return program.getCodeActions(diag.file.srcPath, diag.range);
+    }
+
     const CHAIN_RETURN_CODE = promisesPlugin.DiagnosticCode.ChainMissingToPromise;
 
     describe('chain .toPromise()', () => {
@@ -387,6 +410,106 @@ describe('roku-promises-plugin', () => {
             `);
             program.validate();
             expect(program.getDiagnostics().filter(d => d.code === CHAIN_RETURN_CODE)).to.have.lengthOf(1);
+        });
+    });
+
+    // ── Code actions ──────────────────────────────────────────────────────────
+
+    describe('code actions: PRMS1001 add context parameter', () => {
+        it('inserts "value, context" when callback has 0 params', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onThen(promise, function() end function, myContext)'
+            ));
+            const actions = codeActionsFor(DIAG_CODE);
+            const fix = actions.find(a => a.title === 'Add missing context parameter');
+            expect(fix).to.exist;
+            expect(fix!.isPreferred).to.be.true;
+            expect(insertedTexts(fix!)).to.include('value, context');
+        });
+
+        it('inserts ", context" when callback already has 1 param', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onThen(promise, function(value) end function, myContext)'
+            ));
+            const actions = codeActionsFor(DIAG_CODE);
+            const fix = actions.find(a => a.title === 'Add missing context parameter');
+            expect(fix).to.exist;
+            expect(insertedTexts(fix!)).to.include(', context');
+        });
+
+        it('inserts "context" as first param for onFinally', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onFinally(promise, function() end function, myContext)'
+            ));
+            const actions = codeActionsFor(DIAG_CODE);
+            const fix = actions.find(a => a.title === 'Add missing context parameter');
+            expect(fix).to.exist;
+            expect(insertedTexts(fix!)).to.deep.equal(['context']);
+        });
+
+        it('offers fix-all when multiple PRMS1001 diagnostics exist in the file', () => {
+            program.setFile('source/test.bs', inSub(`
+                promises.onThen(promise, function() end function, myContext)
+                promises.onThen(promise, function() end function, myContext)
+            `));
+            const actions = codeActionsFor(DIAG_CODE);
+            const fixAll = actions.find(a => a.title.includes('all') && a.title.includes('(2)'));
+            expect(fixAll).to.exist;
+            expect(insertedTexts(fixAll!)).to.have.lengthOf(2);
+        });
+
+        it('does not offer fix-all when only one PRMS1001 exists', () => {
+            program.setFile('source/test.bs', inSub(
+                'promises.onThen(promise, function() end function, myContext)'
+            ));
+            const actions = codeActionsFor(DIAG_CODE);
+            const fixAll = actions.find(a => a.title.includes('all'));
+            expect(fixAll).to.be.undefined;
+        });
+    });
+
+    describe('code actions: PRMS1002 add .toPromise()', () => {
+        it('inserts ".toPromise()" at the end of the chain expression', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).then(function(value)
+                    end function)
+                end function
+            `);
+            const actions = codeActionsFor(CHAIN_RETURN_CODE);
+            const fix = actions.find(a => a.title.includes('.toPromise()'));
+            expect(fix).to.exist;
+            expect(fix!.isPreferred).to.be.true;
+            expect(insertedTexts(fix!)).to.deep.equal(['.toPromise()']);
+        });
+
+        it('offers fix-all when multiple PRMS1002 diagnostics exist in the file', () => {
+            program.setFile('source/test.bs', `
+                function doWork1() as object
+                    return promises.chain(promise).then(function(value)
+                    end function)
+                end function
+                function doWork2() as object
+                    return promises.chain(promise).catch(function(err)
+                    end function)
+                end function
+            `);
+            const actions = codeActionsFor(CHAIN_RETURN_CODE);
+            const fixAll = actions.find(a => a.title.includes('all') && a.title.includes('(2)'));
+            expect(fixAll).to.exist;
+            expect(insertedTexts(fixAll!)).to.deep.equal(['.toPromise()', '.toPromise()']);
+        });
+
+        it('does not offer fix-all when only one PRMS1002 exists', () => {
+            program.setFile('source/test.bs', `
+                function doWork() as object
+                    return promises.chain(promise).then(function(value)
+                    end function)
+                end function
+            `);
+            const actions = codeActionsFor(CHAIN_RETURN_CODE);
+            const fixAll = actions.find(a => a.title.includes('all'));
+            expect(fixAll).to.be.undefined;
         });
     });
 });

@@ -7,6 +7,10 @@ import {
     type Expression,
     type LiteralExpression,
     type ReturnStatement,
+    type FunctionExpression,
+    type OnGetCodeActionsEvent,
+    type InsertChange,
+    type Position,
     isBrsFile,
     WalkMode,
     createVisitor,
@@ -17,6 +21,8 @@ import {
     isFunctionExpression,
     isLiteralExpression,
     TokenKind,
+    codeActionUtil,
+    CodeActionKind,
 } from 'brighterscript';
 
 /**
@@ -281,6 +287,21 @@ function makeDiagnostic(
     const hint = isFinally
         ? 'Add a first parameter to receive it (e.g. `sub(context)`).'
         : 'Add a second parameter to receive it (e.g. `function(value, context)`).';
+
+    // Compute the insertion point for the quick-fix action.
+    // callbackArg is guaranteed to be a FunctionExpression here (isFunctionExpression
+    // was already confirmed by getInlineParamCount returning a non-null value).
+    const fn = callbackArg as FunctionExpression;
+    let insertPosition: Position | undefined;
+    let insertText: string;
+    if (isFinally || fn.parameters.length === 0) {
+        insertPosition = fn.leftParen.range?.end;
+        insertText = isFinally ? 'context' : 'value, context';
+    } else {
+        insertPosition = fn.parameters[0].range?.end;
+        insertText = ', context';
+    }
+
     return {
         file: file,
         range: callbackArg.range,
@@ -288,6 +309,7 @@ function makeDiagnostic(
         source: 'roku-promises-plugin',
         code: PromisesDiagnosticCode.ContextParamMissing,
         message: `'${displayName}' was called with a context argument, but the inline callback has no parameter to receive it. ${hint}`,
+        data: insertPosition ? { insertPosition: insertPosition, insertText: insertText } : undefined,
     };
 }
 
@@ -394,6 +416,9 @@ function checkFile(file: BscFile, namespaces: string[]): void {
                         source: 'roku-promises-plugin',
                         code: PromisesDiagnosticCode.ChainMissingToPromise,
                         message: `Chain result returned without '.toPromise()'. The chain builder is not a Promise node — add '.toPromise()' at the end to return the underlying Promise.`,
+                        data: {
+                            insertPosition: node.value.range?.end,
+                        },
                     });
                 }
             }
@@ -496,6 +521,80 @@ function promisesPlugin(options: PromisesPluginOptions = {}): Plugin {
                 return;
             }
             checkFile(file, namespaces);
+        },
+
+        onGetCodeActions: function onGetCodeActions(event: OnGetCodeActionsEvent) {
+            const srcPath = event.file.srcPath;
+
+            // ── Per-diagnostic quick fixes ────────────────────────────────────
+            for (const diag of event.diagnostics) {
+                if (diag.code === PromisesDiagnosticCode.ContextParamMissing && diag.data?.insertPosition) {
+                    event.codeActions.push(codeActionUtil.createCodeAction({
+                        title: 'Add missing context parameter',
+                        diagnostics: [diag],
+                        isPreferred: true,
+                        kind: CodeActionKind.QuickFix,
+                        changes: [{
+                            type: 'insert',
+                            filePath: srcPath,
+                            position: diag.data.insertPosition,
+                            newText: diag.data.insertText,
+                        } as InsertChange],
+                    }));
+                } else if (diag.code === PromisesDiagnosticCode.ChainMissingToPromise && diag.data?.insertPosition) {
+                    event.codeActions.push(codeActionUtil.createCodeAction({
+                        title: 'Add \'.toPromise()\'',
+                        diagnostics: [diag],
+                        isPreferred: true,
+                        kind: CodeActionKind.QuickFix,
+                        changes: [{
+                            type: 'insert',
+                            filePath: srcPath,
+                            position: diag.data.insertPosition,
+                            newText: '.toPromise()',
+                        } as InsertChange],
+                    }));
+                }
+            }
+
+            // ── Fix-all actions (shown when 2+ fixable issues exist in the file) ──
+            const allFileDiags = event.program.getDiagnostics().filter(
+                d => d.file?.srcPath === srcPath
+            );
+
+            const allContextParam = allFileDiags.filter(
+                d => d.code === PromisesDiagnosticCode.ContextParamMissing && d.data?.insertPosition
+            );
+            if (allContextParam.length > 1) {
+                event.codeActions.push(codeActionUtil.createCodeAction({
+                    title: `Add missing context parameter to all callbacks in file (${allContextParam.length})`,
+                    diagnostics: allContextParam,
+                    kind: CodeActionKind.QuickFix,
+                    changes: allContextParam.map(d => ({
+                        type: 'insert',
+                        filePath: srcPath,
+                        position: d.data.insertPosition,
+                        newText: d.data.insertText,
+                    } as InsertChange)),
+                }));
+            }
+
+            const allToPromise = allFileDiags.filter(
+                d => d.code === PromisesDiagnosticCode.ChainMissingToPromise && d.data?.insertPosition
+            );
+            if (allToPromise.length > 1) {
+                event.codeActions.push(codeActionUtil.createCodeAction({
+                    title: `Add '.toPromise()' to all chains in file (${allToPromise.length})`,
+                    diagnostics: allToPromise,
+                    kind: CodeActionKind.QuickFix,
+                    changes: allToPromise.map(d => ({
+                        type: 'insert',
+                        filePath: srcPath,
+                        position: d.data.insertPosition,
+                        newText: '.toPromise()',
+                    } as InsertChange)),
+                }));
+            }
         }
     };
 }
