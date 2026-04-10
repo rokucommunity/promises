@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "outDir": "./dist/plugin",
+        "rootDir": "./plugin",
+        "module": "commonjs",
+        "target": "es2018",
+        "lib": ["esnext"],
+        "strict": true,
+        "sourceMap": true,
+        "declaration": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true
+    },
+    "include": [
+        "plugin/**/*.ts"
+    ]
+}

@@ -29,8 +29,8 @@ function run() {
         .readdirSync(rootDir)
         .filter((file) => file.endsWith('.tgz'))
         .sort((a, b) => {
-            const aVersion = a.match(/(\d+\.\d+\.\d+.*)\.tgz/)?.[1];
-            const bVersion = b.match(/(\d+\.\d+\.\d+.*)\.tgz/)?.[1];
+            const aVersion = (/(\d+\.\d+\.\d+.*)\.tgz/).exec(a)?.[1];
+            const bVersion = (/(\d+\.\d+\.\d+.*)\.tgz/).exec(b)?.[1];
             return semver.rcompare(aVersion, bVersion);
         })[0];
     const tgzPackagePath = path.resolve(rootDir, tgzPackageName);
@@ -63,8 +63,8 @@ function run() {
         diagnosticFilters: [
             //temporarily disable the "cannot find name" error since ropm has a bug with that...
             {
-                "src": "source/roku_modules/**/*.bs",
-                "codes": [
+                'src': 'source/roku_modules/**/*.bs',
+                'codes': [
                     1001
                 ]
             },

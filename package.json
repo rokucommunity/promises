@@ -6,7 +6,11 @@
   "description": "A Promise-like implementation for BrightScript/Roku",
   "scripts": {
     "preversion": "npm run build && npm run prepare-releases",
-    "build": "bsc",
+    "build": "bsc && npm run build-plugin",
+    "build-plugin": "tsc -p tsconfig.plugin.json",
+    "lint": "eslint \"plugin/**/*.ts\" \"scripts/**/*.ts\"",
+    "test-plugin": "mocha",
+    "test-plugin:watch": "mocha --watch",
     "build-tests": "bsc --project bsconfig.tests.json",
     "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
     "test-package": "npx ts-node ./scripts/test-package.ts",
@@ -15,23 +19,48 @@
   },
   "devDependencies": {
     "@rokucommunity/bslint": "^0.8.38",
+    "@types/chai": "^5.2.3",
     "@types/fs-extra": "^11.0.1",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.6.0",
+    "@types/source-map-support": "^0.5.10",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
     "brighterscript": "0.69.11",
+    "chai": "^6.2.2",
     "dotenv": "^16.3.1",
+    "eslint": "^8.57.1",
+    "eslint-import-resolver-typescript": "^3.10.1",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsdoc": "^39.9.1",
+    "eslint-plugin-no-only-tests": "^2.6.0",
     "fs-extra": "^11.1.1",
+    "mocha": "^11.7.5",
     "roku-deploy": "^3.14.4",
     "rooibos-roku": "^5.15.7",
     "ropm": "^0.11.2",
     "semver": "^7.7.2",
+    "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
+  },
+  "exports": {
+    "./plugin": "./dist/plugin/index.js"
   },
   "files": [
     "dist/components/Promise.xml",
     "dist/source/promises.brs",
-    "dist/source/promises.d.bs"
+    "dist/source/promises.d.bs",
+    "dist/plugin"
   ],
+  "peerDependencies": {
+    "brighterscript": ">=0.65.0"
+  },
+  "peerDependenciesMeta": {
+    "brighterscript": {
+      "optional": true
+    }
+  },
   "keywords": [
     "ropm",
     "roku",
