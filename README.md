@@ -189,7 +189,115 @@ end function
 ## How it works
 While the promise spec is interoperable with any other promise node created by other libraries, the `promises` namespace is the true magic of the @rokucommunity/promises library. We have several helper functions that enable you to chain multiple promises together, very much in the same way as javascript promises.
 
+---
 
-## Limitations
-### no support for roMessagePort
-Promises do not currently work with [message ports](https://developer.roku.com/docs/references/brightscript/components/romessageport.md). So this means you'll only be able to _observe_ promises and get callbacks from the render thread. In practice, this probably isn't much of a limitation, but still something to keep in mind.
+## Promises in Tasks
+
+> **Advanced usage.** The patterns above (render-thread observers and `promises.chain()`) are the primary way to use this library. The section below covers a separate capability for driving promise flows from inside a [Task](https://developer.roku.com/docs/references/scenegraph/control-nodes/task.md) node's run function.
+
+Promises can be observed from inside a Task using `promises.setMessagePort()` and `promises.wait2()`. This lets you write sequential async logic in a task without needing to restructure your code around observers.
+
+### Setup
+
+In your task's run function, create an `roMessagePort`, register it with the promises library, then run your event loop using `promises.wait2()` instead of the native `wait()`:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+
+    ' ... your promise chains here ...
+
+    while true
+        message = promises.wait2(0, m.port)
+        ' handle non-promise messages (e.g. field observations) here
+    end while
+end sub
+```
+
+`promises.wait2(timeoutMs, port)` works like the native `wait()` but automatically processes any promise events that arrive on the promises port. Pass `0` for an indefinite wait, or a timeout in milliseconds to bound the wait.
+
+### Sequential async steps
+
+Return a promise from a `.then()` callback to wait for it before the next step runs:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+
+    promises.chain(promises.resolve(true))
+        .then(function(response as object) as dynamic
+            return doNetworkRequest("step1")
+        end function)
+        .then(function(step1Result as object) as dynamic
+            return doNetworkRequest("step2")
+        end function)
+        .then(sub(step2Result as object)
+            promises.resolve({ step1: "first", step2: "second" }, m.top.promise)
+        end sub)
+        .finally(sub()
+            m.top.control = "STOP"
+        end sub)
+
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve(m.requestStorage[requestId].result, m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+```
+
+### Parallel requests in a task
+
+Use `promises.all()` to wait for multiple concurrent requests:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+
+    p1 = doNetworkRequest("req-a")
+    p2 = doNetworkRequest("req-b")
+    p3 = doNetworkRequest("req-c")
+
+    promises.chain(promises.all([p1, p2, p3]))
+        .then(sub(results as object)
+            promises.resolve(results, m.top.promise)
+        end sub)
+        .finally(sub()
+            m.top.control = "STOP"
+        end sub)
+
+    responses = { "req-a": "a", "req-b": "b", "req-c": "c" }
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve(responses[requestId], m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+```
+
+### Error handling in tasks
+
+`.catch()` works the same as on the render thread. Return a resolved promise from `.catch()` to recover:
+
+```brighterscript
+promises.chain(promises.reject("boom"))
+    .catch(function(error as object) as dynamic
+        return promises.resolve("fallback")
+    end function)
+    .then(sub(result as object)
+        promises.resolve(result, m.top.promise)
+    end sub)
+    .finally(sub()
+        m.top.control = "STOP"
+    end sub)
+```
+
