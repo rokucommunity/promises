@@ -2376,6 +2376,10 @@ namespace tests
 
         end function
 
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        @describe("Promises in Tasks")
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
         @async
         @it("Simple Promise In Task Test")
         function _()
@@ -2385,7 +2389,8 @@ namespace tests
                 m.testSuite.assertEqual(result, "task completed")
                 m.testSuite.done()
             end function).catch(function(error)
-                print "error", error, FormatJson(error.backtrace)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
             end function)
         end function
 
@@ -2399,7 +2404,8 @@ namespace tests
                 m.testSuite.assertEqual(result.ipInfo, "hello")
                 m.testSuite.done()
             end function).catch(function(error)
-                print "error", error, FormatJson(error.backtrace)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
             end function)
         end function
 
@@ -2414,6 +2420,76 @@ namespace tests
             end function).catch(function(error)
                 print "Caught expected error:", error
                 m.testSuite.assertNotInvalid(error)
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("Sequential async steps in task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test4")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, { step1: "first", step2: "second" })
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail("Promise was expected to be resolved but was rejected instead")
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("promises.all() inside a task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test5")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, ["a", "b", "c"])
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("context flows through task chain")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test6")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, { count: 3 })
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("catch recovers and resolves with fallback in task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test7")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, "fallback")
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail("Expected recovery but got error: " + FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("finally runs after rejection in task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test8")
+            promises.chain(promise).then(function(result)
+                m.testSuite.fail("Expected rejection but got result")
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.assertEqual(error, { finallyCalled: true, error: "boom" })
                 m.testSuite.done()
             end function)
         end function

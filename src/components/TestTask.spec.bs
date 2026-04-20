@@ -54,6 +54,109 @@ sub test3()
     end while
 end sub
 
+sub test4()
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+    promises.chain(promises.resolve(true)).then(function(response as object) as dynamic
+        return doNetworkRequest("step1")
+    end function).then(function(step1Result as object) as dynamic
+        return doNetworkRequest("step2")
+    end function).then(sub(step2Result as object)
+        promises.resolve({ step1: "first", step2: "second" }, m.top.promise)
+    end sub).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            if requestId = "step1"
+                promises.resolve("first", m.requestStorage[requestId].promise)
+            else if requestId = "step2"
+                promises.resolve("second", m.requestStorage[requestId].promise)
+            end if
+        end if
+    end while
+end sub
+
+sub test5()
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+    p1 = doNetworkRequest("req-a")
+    p2 = doNetworkRequest("req-b")
+    p3 = doNetworkRequest("req-c")
+    promises.chain(promises.all([p1, p2, p3])).then(sub(results as object)
+        promises.resolve(results, m.top.promise)
+    end sub).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+
+    responses = { "req-a": "a", "req-b": "b", "req-c": "c" }
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve(responses[requestId], m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+
+sub test6()
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+    context = { count: 0 }
+    promises.chain(promises.resolve(true), context).then(function(response as object, context as object) as dynamic
+        context.count++
+        return doNetworkRequest("step1")
+    end function).then(function(response as object, context as object) as dynamic
+        context.count++
+        return doNetworkRequest("step2")
+    end function).then(sub(response as object, context as object)
+        context.count++
+        promises.resolve({ count: context.count }, m.top.promise)
+    end sub).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve(requestId, m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+
+sub test7()
+    promises.setMessagePort(m.port)
+    promises.chain(promises.reject("boom")).catch(function(error as object) as dynamic
+        return promises.resolve("fallback")
+    end function).then(sub(result as object)
+        promises.resolve(result, m.top.promise)
+    end sub).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+
+    while true
+        message = promises.wait2(20, m.port)
+    end while
+end sub
+
+sub test8()
+    promises.setMessagePort(m.port)
+    context = { finallyCalled: false }
+    promises.chain(promises.reject("boom"), context).then(sub(response as object, context as object)
+        promises.resolve("should not reach", m.top.promise)
+    end sub).finally(sub(context as object)
+        context.finallyCalled = true
+        promises.reject({ finallyCalled: context.finallyCalled, error: "boom" }, m.top.promise)
+        m.top.control = "STOP"
+    end sub)
+
+    while true
+        message = promises.wait2(20, m.port)
+    end while
+end sub
+
 function doNetworkRequest(url as string) as dynamic
     promise = promises.create()
     if m.requestStorage = invalid then
