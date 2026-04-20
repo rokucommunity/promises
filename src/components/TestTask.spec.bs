@@ -35,8 +35,8 @@ sub test2()
     while true
         message = promises.wait2(0, m.port)
         if type(message) = "roSGNodeEvent" then
-            requestId = message.getData()
-            promises.resolve({ ipInfo: "hello" }, m.requestStorage[requestId].promise)
+            requestUrl = message.getData()
+            promises.resolve({ ipInfo: "hello" }, m.requestStorage[requestUrl].promise)
         end if
     end while
 end sub
