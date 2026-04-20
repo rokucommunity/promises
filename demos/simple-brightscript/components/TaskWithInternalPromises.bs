@@ -4,17 +4,19 @@ sub init()
 end sub
 
 sub startTask()
-    promises.initTaskFunctionality(m.port)
+    promises.setMessagePort(m.port)
     promise = doNetworkRequest("http://ip-api.com/json/", "GET", {})
     promises.chain(promise).then(function(response)
         m.top.response = response
     end function).catch(function(error)
         print "Error in TaskWithInternalPromises:", error
-    end function)
-
-    promises.runEventLoop(m.port, sub(message)
-        print "Task with internal promises received message:", message
+    end function).finally(sub()
+        m.top.control = "STOP"
     end sub)
+
+    while true
+        message = promises.wait2(0, m.port)
+    end while
 end sub
 
 
