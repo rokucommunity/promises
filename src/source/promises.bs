@@ -538,7 +538,7 @@ namespace promises
     function wait2(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
         promisesPort = promises.getMessagePort()
         'bs:disable-next-line
-        utils = createObject("roUtils") '
+        utils = createObject("roUtils")
         portIsPromisesPort = false
 
         ' if the promise port is the same as the supplied port (and we can actually use roUtils to compare same-ness)
@@ -564,7 +564,8 @@ namespace promises
                 thisTickTimeout = timeoutMilliseconds
             end if
             'ensure we don't wait too long in a single tick (so promises still have time to resolve)
-            if thisTickTimeout = 0 or thisTickTimeout > 200 then
+            'preserve true indefinite waits when waiting directly on the promises port
+            if thisTickTimeout > 200 or (thisTickTimeout = 0 and not portIsPromisesPort) then
                 thisTickTimeout = 200
             end if
 
