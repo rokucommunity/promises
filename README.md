@@ -241,11 +241,12 @@ sub runTask()
             m.top.control = "STOP"
         end sub)
 
+    responses = { "step1": "first", "step2": "second" }
     while true
         message = promises.wait2(0, m.port)
         if type(message) = "roSGNodeEvent" then
             requestId = message.getData()
-            promises.resolve(m.requestStorage[requestId].result, m.requestStorage[requestId].promise)
+            promises.resolve(responses[requestId], m.requestStorage[requestId].promise)
         end if
     end while
 end sub
