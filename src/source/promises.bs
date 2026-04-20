@@ -570,7 +570,7 @@ namespace promises
 
             'if the port we're waiting on is the promises port, then no need for the double-latch
             if portIsPromisesPort then
-                event = wait(timeoutMilliseconds, port)
+                event = wait(thisTickTimeout, port)
                 if promises.isPromiseEvent(event) then
                     promises.internal.notifyListeners(event)
                     continue while
