@@ -566,8 +566,6 @@ namespace promises
             'ensure we don't wait too long in a single tick (so promises still have time to resolve)
             if thisTickTimeout = 0 or thisTickTimeout > 200 then
                 thisTickTimeout = 200
-            else
-                thisTickTimeout = timeoutMilliseconds
             end if
 
             'if the port we're waiting on is the promises port, then no need for the double-latch
