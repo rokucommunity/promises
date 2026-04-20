@@ -197,7 +197,7 @@ end function
 function getChainResultString(data as object) as object
     timezone = data.timezone
     doy = data.day_of_year
-    return "Confirming your timezone is is " + timezone + " and the day of year is " + doy.toStr() + "!"
+    return "Confirming your timezone is " + timezone + " and the day of year is " + doy.toStr() + "!"
 end function
 
 sub initOnscreenImage()
