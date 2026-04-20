@@ -157,6 +157,40 @@ sub test8()
     end while
 end sub
 
+sub test9()
+    promises.setMessagePort(m.port)
+    maxCount = 5000
+    doWork = function(context as object) as dynamic
+        if context.currentCount > context.maxCount then
+            return promises.resolve({ count: context.currentCount })
+        end if
+        context.currentCount++
+        return promises.onThen(promises.resolve(true), function(result as object, context as object) as dynamic
+            doWork = context.doWork
+            return doWork(context)
+        end function, context)
+    end function
+
+    promises.chain(promises.resolve(true), {
+        currentCount: 0
+        maxCount: maxCount
+        doWork: doWork
+    }).then(function(result as object, context as object) as dynamic
+        doWork = context.doWork
+        return doWork(context)
+    end function).then(sub(result as object)
+        promises.resolve(result, m.top.promise)
+    end sub).catch(sub(error as object)
+        promises.reject(error, m.top.promise)
+    end sub).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+
+    while true
+        message = promises.wait2(0, m.port)
+    end while
+end sub
+
 function doNetworkRequest(url as string) as dynamic
     promise = promises.create()
     if m.requestStorage = invalid then

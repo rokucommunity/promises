@@ -813,9 +813,11 @@ namespace promises.internal
 
             if promises.internal.hasStorage(originalPromise) then
                 ' There were listeners added as a result of some of the callback notifications
-                ' Re-trigger the notification process for the new listeners
+                ' Re-trigger the notification process for the new listeners.
+                ' In message port mode, re-queue through the observed field instead of
+                ' recursing synchronously to avoid deep stack growth.
                 if m.__promises__promisesPort <> invalid then
-                    promises.internal.notifyListeners(event)
+                    originalPromise.promiseState = promiseState
                 else
                     promises.internal.delay(sub (event as object)
                         promises.internal.notifyListeners(event)

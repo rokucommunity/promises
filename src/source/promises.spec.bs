@@ -2491,6 +2491,20 @@ namespace tests
             end function)
         end function
 
+        @async(60000)
+        @it("deep chain in task mode does not overflow the stack")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test9")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result.count > 5000)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
     end class
 end namespace
 
