@@ -2374,6 +2374,96 @@ namespace tests
         end function
 
         '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        @describe("promises.peekMessage() / promises.getMessage()")
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        @async
+        @it("peekMessage returns invalid on empty port")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testPeekEmpty")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("peekMessage drains promise events and fires callbacks")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testPeekDrainsPromises")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result.callbackFired)
+                m.testSuite.assertTrue(result.peekInvalid)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("peekMessage leaves non-promise message in queue")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testPeekLeavesNonPromise")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("getMessage returns invalid on empty port")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testGetEmpty")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("getMessage drains promise events and returns invalid")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testGetDrainsPromises")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result.callbackFired)
+                m.testSuite.assertTrue(result.resultInvalid)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("getMessage returns and removes non-promise message")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testGetConsumesNonPromise")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         @describe("Promises in Tasks")
         '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
