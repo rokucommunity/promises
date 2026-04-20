@@ -579,7 +579,10 @@ namespace promises
                 return event
             else
                 'flush all pending promises on the promise port
-                promises.peekMessage(promises.getMessagePort())
+                messagePort = promises.getMessagePort()
+                if messagePort <> invalid then
+                    promises.peekMessage(messagePort)
+                end if
 
                 'wait a little bit for an event on the supplied port
                 event = wait(thisTickTimeout, port)
@@ -596,20 +599,6 @@ namespace promises
         end while
         return invalid
     end function
-
-    ' function closeAllTheThings() as dynamic
-    '     unhandledMessages = []
-    '     while true
-    '         message = wait(timeout, port)
-    '         if promises.isPromiseEvent(message) then
-    '             promises.internal.notifyListeners(message)
-    '             continue while
-    '         else
-    '             unhandledMessages.push(message)
-    '         end if
-    '     end while
-    '     return unhandledMessages
-    ' end function
 
     ' Makes sure the value supplied is a promise
     function ensurePromise(value as object) as object
