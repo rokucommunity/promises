@@ -12,7 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - Better context param mismatch handling ([#69](https://github.com/rokucommunity/promises/pull/69))
  - Reduce data cloning ([#68](https://github.com/rokucommunity/promises/pull/68))
- - upgrade to [brighterscript@0.71.1](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0711---2026-04-14). Notable changes since 0.69.10:
  - upgrade to [roku-deploy@3.16.5](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3165---2026-04-13). Notable changes since 3.14.4:
 
 
