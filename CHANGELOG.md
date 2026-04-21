@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.7.0](https://github.com/rokucommunity/promises/compare/0.6.7...v0.7.0) - 2026-04-21
+### Added
+ - Full promise support in Task threads ([#67](https://github.com/rokucommunity/promises/pull/67))
+### Changed
+ - Better context param mismatch handling ([#69](https://github.com/rokucommunity/promises/pull/69))
+ - Reduce data cloning ([#68](https://github.com/rokucommunity/promises/pull/68))
+ - upgrade to [roku-deploy@3.16.5](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3165---2026-04-13). Notable changes since 3.14.4:
+
+
+
 ## [0.6.7](https://github.com/rokucommunity/promises/compare/0.6.6...v0.6.7) - 2025-10-31
 ### Fixed
  - Fix `repositoryUrl` ([529b745](https://github.com/rokucommunity/promises/commit/529b745))
