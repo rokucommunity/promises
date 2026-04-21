@@ -1,0 +1,7 @@
+<component name="TestTask" extends="Task">
+    <interface>
+        <field id="promise" type="node" />
+        <field id="request" type="string" />
+        <function name="doAction" />
+    </interface>
+</component>

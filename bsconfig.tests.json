@@ -1,31 +1,28 @@
 {
-	"stagingDir": "./dist",
-	"extends": "./bsconfig.json",
-	"retainStagingDir": true,
-	"createPackage": false,
-	"files": [
-		"**/*"
-	],
-	"plugins": [
+    "extends": "./bsconfig.json",
+    "files": [
+        "**/*"
+    ],
+    "plugins": [
         "rooibos-roku"
-	],
-	"rooibos": {
-		"isRecordingCodeCoverage": false,
-		"isGlobalMethodMockingEnabled": true,
-		"testsFilePattern": null,
-		"tags": [
-			"!integration",
-			"!deprecated",
-			"!fixme"
-		],
-		"showOnlyFailures": true,
-		"catchCrashes": true,
-		"lineWidth": 70,
-		"failFast": false,
-		"sendHomeOnFinish": false,
-		"colorizeOutput": true,
-		"reporters": [
-			"mocha"
-		]
-	}
+    ],
+    "rooibos": {
+        "isRecordingCodeCoverage": false,
+        "isGlobalMethodMockingEnabled": true,
+        "testsFilePattern": null,
+        "tags": [
+            "!integration",
+            "!deprecated",
+            "!fixme"
+        ],
+        "showOnlyFailures": true,
+        "catchCrashes": true,
+        "lineWidth": 70,
+        "failFast": false,
+        "sendHomeOnFinish": false,
+        "colorizeOutput": true,
+        "reporters": [
+            "mocha"
+        ]
+    }
 }

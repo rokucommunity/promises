@@ -1,7 +1,7 @@
 import "pkg:/source/promises.bs"
 
 namespace tests
-    @SGNode("test")
+    @SGNode("Test")
     @suite
     class PromisesTests extends rooibos.BaseTestSuite
 
@@ -829,7 +829,7 @@ namespace tests
             ]), context).then(sub(result, context)
                 context.thenCount++
                 context.result = result
-            end sub).catch(sub(_)
+            end sub).catch(sub(_, context)
                 context.catchCount++
             end sub).toPromise()
 
@@ -861,7 +861,7 @@ namespace tests
             ]), context).then(sub(result, context)
                 context.thenCount++
                 context.result = result
-            end sub).catch(sub(_)
+            end sub).catch(sub(_, context)
                 context.catchCount++
             end sub).toPromise()
 
@@ -893,7 +893,7 @@ namespace tests
             ]), context).then(sub(result, context)
                 context.thenCount++
                 context.result = result
-            end sub).catch(sub(_)
+            end sub).catch(sub(_, context)
                 context.catchCount++
             end sub).toPromise()
 
@@ -2341,6 +2341,10 @@ namespace tests
             end sub, testNode)
         end function
 
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        @describe("unravels deep promise chain without crashing due to stackoverflow (This might take a while...)")
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
         @async(60000)
         @it("unravels deep promise chain without crashing due to stackoverflow")
         function _()
@@ -2372,6 +2376,229 @@ namespace tests
             end function).toPromise()
 
         end function
+
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        @describe("promises.peekMessage() / promises.getMessage()")
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        @async
+        @it("peekMessage returns invalid on empty port")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testPeekEmpty")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("peekMessage drains promise events and fires callbacks")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testPeekDrainsPromises")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result.callbackFired)
+                m.testSuite.assertTrue(result.peekInvalid)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("peekMessage leaves non-promise message in queue")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testPeekLeavesNonPromise")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("getMessage returns invalid on empty port")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testGetEmpty")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("getMessage drains promise events and returns invalid")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testGetDrainsPromises")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result.callbackFired)
+                m.testSuite.assertTrue(result.resultInvalid)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("getMessage returns and removes non-promise message")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("testGetConsumesNonPromise")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        @describe("Promises in Tasks")
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        @async
+        @it("Simple Promise In Task Test")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test1")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, "task completed")
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
+            end function)
+        end function
+
+
+        @async
+        @it("Promise In Task Test with Fake Network Call")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test2")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result.ipInfo, "hello")
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("Promise In Task Test with rejection")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test3")
+            promises.chain(promise).then(function(result)
+                m.testSuite.fail("Promise was expected to be rejected but was resolved instead")
+                m.testSuite.done()
+            end function).catch(function(error)
+                print "Caught expected error:", error
+                m.testSuite.assertNotInvalid(error)
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("Sequential async steps in task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test4")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, { step1: "first", step2: "second" })
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail("Promise was expected to be resolved but was rejected instead")
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("promises.all() inside a task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test5")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, ["a", "b", "c"])
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("context flows through task chain")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test6")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, { count: 3 })
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error.backtrace))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("catch recovers and resolves with fallback in task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test7")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertEqual(result, "fallback")
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail("Expected recovery but got error: " + FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async
+        @it("finally runs after rejection in task")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test8")
+            promises.chain(promise).then(function(result)
+                m.testSuite.fail("Expected rejection but got result")
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.assertEqual(error, { finallyCalled: true, error: "boom" })
+                m.testSuite.done()
+            end function)
+        end function
+
+        @async(60000)
+        @it("deep chain in task mode does not overflow the stack")
+        function _()
+            task = createObject("roSGNode", "TestTask")
+            promise = task@.doAction("test9")
+            promises.chain(promise).then(function(result)
+                m.testSuite.assertTrue(result.count > 5000)
+                m.testSuite.done()
+            end function).catch(function(error)
+                m.testSuite.fail(FormatJson(error))
+                m.testSuite.done()
+            end function)
+        end function
+
     end class
 end namespace
 

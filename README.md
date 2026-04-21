@@ -189,7 +189,188 @@ end function
 ## How it works
 While the promise spec is interoperable with any other promise node created by other libraries, the `promises` namespace is the true magic of the @rokucommunity/promises library. We have several helper functions that enable you to chain multiple promises together, very much in the same way as javascript promises.
 
+---
 
-## Limitations
-### no support for roMessagePort
-Promises do not currently work with [message ports](https://developer.roku.com/docs/references/brightscript/components/romessageport.md). So this means you'll only be able to _observe_ promises and get callbacks from the render thread. In practice, this probably isn't much of a limitation, but still something to keep in mind.
+## Promises in Tasks
+
+> Promises work great inside a [Task](https://developer.roku.com/docs/references/scenegraph/control-nodes/task.md) node too. With a small amount of setup using `promises.setMessagePort()` and `promises.wait2()`, you can write sequential async logic without restructuring your code around observers.
+
+### Setup
+
+In your task's run function, create an `roMessagePort`, register it with the promises library, then run your event loop using `promises.wait2()` instead of the native `wait()`:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+
+    ' ... your promise chains here ...
+
+    while true
+        message = promises.wait2(0, m.port)
+        ' handle non-promise messages (e.g. field observations) here
+    end while
+end sub
+```
+
+`promises.wait2(timeoutMs, port)` works like the native `wait()` but automatically processes any promise events that arrive on the promises port. Pass `0` for an indefinite wait, or a timeout in milliseconds to bound the wait.
+
+### How it works
+
+On the render thread, promise resolution is driven by field observers — when a promise node's `promiseResult` field changes, observers fire and `.then()` callbacks run. Tasks don't have that mechanism by default.
+
+`promises.setMessagePort()` tells the library to route those field-change notifications to your task's `roMessagePort` instead. `promises.wait2()` then drains that port on each iteration, processing any pending promise events before returning control to your loop. The net effect is the same observer-driven resolution, just happening inside your task's event loop rather than on the render thread.
+
+This is why the event loop is required. Without it, promise callbacks would never fire.
+
+### Sequential async steps
+
+Return a promise from a `.then()` callback to wait for it before the next step runs:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+
+    promises.chain(promises.resolve(true))
+        .then(function(response as object) as dynamic
+            return doNetworkRequest("step1")
+        end function)
+        .then(function(step1Result as object) as dynamic
+            return doNetworkRequest("step2")
+        end function)
+        .then(sub(step2Result as object)
+            promises.resolve({ step1: "first", step2: "second" }, m.top.promise)
+        end sub)
+        .finally(sub()
+            m.top.control = "STOP"
+        end sub)
+
+    responses = { "step1": "first", "step2": "second" }
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve(responses[requestId], m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+```
+
+### Parallel requests in a task
+
+Use `promises.all()` to wait for multiple concurrent requests:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+    m.top.observeField("request", m.port)
+
+    p1 = doNetworkRequest("req-a")
+    p2 = doNetworkRequest("req-b")
+    p3 = doNetworkRequest("req-c")
+
+    promises.chain(promises.all([p1, p2, p3]))
+        .then(sub(results as object)
+            promises.resolve(results, m.top.promise)
+        end sub)
+        .finally(sub()
+            m.top.control = "STOP"
+        end sub)
+
+    responses = { "req-a": "a", "req-b": "b", "req-c": "c" }
+    while true
+        message = promises.wait2(0, m.port)
+        if type(message) = "roSGNodeEvent" then
+            requestId = message.getData()
+            promises.resolve(responses[requestId], m.requestStorage[requestId].promise)
+        end if
+    end while
+end sub
+```
+
+### Error handling in tasks
+
+`.catch()` works the same as on the render thread. Return a resolved promise from `.catch()` to recover:
+
+```brighterscript
+promises.chain(promises.reject("boom"))
+    .catch(function(error as object) as dynamic
+        return promises.resolve("fallback")
+    end function)
+    .then(sub(result as object)
+        promises.resolve(result, m.top.promise)
+    end sub)
+    .finally(sub()
+        m.top.control = "STOP"
+    end sub)
+```
+
+### Using a separate message port
+
+You can also pass a *different* port than the one registered with `promises.setMessagePort()`. In that case, `wait2` waits on the port you provide, but still drains the promises port on each iteration — so promise callbacks continue to fire even if your task is listening elsewhere.
+
+This is useful when your task needs to observe fields or other message sources on a dedicated port while still running promise chains:
+
+```brighterscript
+sub runTask()
+    m.promisesPort = createObject("roMessagePort")
+    promises.setMessagePort(m.promisesPort)
+
+    m.taskPort = createObject("roMessagePort")
+    m.top.observeField("someInput", m.taskPort)
+
+    while true
+        ' waits on taskPort, but also drains promisesPort each iteration
+        message = promises.wait2(0, m.taskPort)
+        if type(message) = "roSGNodeEvent" then
+            ' handle field observations here
+        end if
+    end while
+end sub
+```
+
+### peekMessage and getMessage
+
+`promises.peekMessage(port)` and `promises.getMessage(port)` are non-blocking alternatives to `promises.wait2()`. They work like the native `port.peekMessage()` / `port.getMessage()`, but automatically consume and process any promise events at the front of the given port's queue before returning.
+
+Unlike `wait2`, these functions only drain the port you pass — they do **not** also drain the registered promises port if it's different. Use them when you want to poll for messages without blocking, or when you're already looping with `wait2` and need to inspect the queue:
+
+```brighterscript
+sub runTask()
+    m.port = createObject("roMessagePort")
+    promises.setMessagePort(m.port)
+
+    while true
+        ' non-blocking check — returns invalid immediately if nothing is pending
+        message = promises.getMessage(m.port)
+        if message <> invalid
+            ' handle message
+        end if
+
+        ' do other work here between checks
+    end while
+end sub
+```
+
+If you are using a separate port for non-promise messages, pass that port to `peekMessage`/`getMessage` directly — but be aware that promise events on the promises port will **not** be processed as a side effect. In that case, prefer `wait2` to keep both ports drained.
+
+```brighterscript
+sub runTask()
+    m.promisesPort = createObject("roMessagePort")
+    promises.setMessagePort(m.promisesPort)
+
+    m.taskPort = createObject("roMessagePort")
+    m.top.observeField("someInput", m.taskPort)
+
+    while true
+        ' drains both ports
+        message = promises.wait2(0, m.taskPort)
+
+        ' peek at taskPort only — promisesPort is NOT drained here
+        pending = promises.peekMessage(m.taskPort)
+    end while
+end sub
+```
