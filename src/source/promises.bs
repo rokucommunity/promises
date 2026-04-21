@@ -684,18 +684,15 @@ namespace promises.internal
 
         ' Only create storage and register observers if it does not exist
         if storage = invalid then
-            if m.__promises__promisesPort <> invalid then
-                promise.observeFieldScoped(promises.internal.PromiseField.promiseState, m.__promises__promisesPort, [promises.internal.PromiseField.promiseResult])
-            else
-                ' unregister any observers on the promise to prevent multiple callbacks
-                promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
-                promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event as dynamic)
-                    'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
-                    promises.internal.delay(sub(context as dynamic)
-                        promises.internal.notifyListeners(context.event)
-                    end sub, { event: event })
-                end sub, [promises.internal.PromiseField.promiseResult])
-            end if
+            callback = m.__promises__promisesPort <> invalid ? m.__promises__promisesPort : sub(event as dynamic)
+                'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
+                promises.internal.delay(sub(context as dynamic)
+                    promises.internal.notifyListeners(context.event)
+                end sub, { event: event })
+            end sub
+            ' unregister any observers on the promise to prevent multiple callbacks
+            promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
+            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, callback, [promises.internal.PromiseField.promiseResult])
             storage = {
                 promise: promise
                 thenListeners: []
@@ -801,6 +798,7 @@ namespace promises.internal
             for each listener in promiseStorage.finallyListeners
                 promises.internal.processPromiseListener(originalPromise, promiseState, listener, true, false, promiseResult)
             end for
+
             #if PROMISES_DEBUG
                 if m.__promises__debug = invalid then
                     m.__promises__debug = []
@@ -808,6 +806,17 @@ namespace promises.internal
                 'TODO giant memory leak. if you see this, delete it immediately!
                 m.__promises__debug.push(promiseStorage)
             #end if
+
+            ' if we're running in a task, we can keep notifying new listeners
+            if m.__promises__promisesPort <> invalid then
+                continue while
+            else
+                'we're not in a task, nexttick to avoid execution timeouts
+                promises.internal.delay(sub (event as object)
+                    promises.internal.notifyListeners(event)
+                end sub, event)
+                exit while
+            end if
         end while
     end sub
 
@@ -842,11 +851,11 @@ namespace promises.internal
             #if PROMISES_DEBUG
                 print "[promises.notify]", originalPromise.id, "calling callback for", newPromise.id
             #end if
+            lineNumber = -1
             try
                 '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
                 if isThenOrCatch then
                     if hasContext then
-                        lineNumber = -1
                         try
                             lineNumber = LINE_NUM + 1
                             callbackResult = callback(promiseValue, context)
@@ -887,7 +896,6 @@ namespace promises.internal
                     '.finally callback takes 1 optional parameter (`context`)
                 else
                     if hasContext then
-                        lineNumber = -1
                         try
                             lineNumber = LINE_NUM + 1
                             callbackResult = callback(context)
