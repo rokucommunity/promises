@@ -762,11 +762,19 @@ namespace promises.internal
     '
     sub notifyListeners(event as object)
         originalPromise = event.getRoSgNode()
-        if promises.isComplete(originalPromise) then
-            #if PROMISES_DEBUG
-                print "[promises.done]", originalPromise.id, "has completed"
-            #end if
 
+        ' short circuit if the promise is not complete, since we only want to notify listeners once
+        if not promises.isComplete(originalPromise) then
+            return
+        end if
+
+        #if PROMISES_DEBUG
+            print "[promises.done]", originalPromise.id, "has completed"
+        #end if
+
+        ' We want to make sure that if a new listener is added while we are processing the current listeners, that it also gets notified of the current state change.
+        ' Doing the while loop here supports handing new observers that are added in the callbacks.
+        while promises.internal.hasStorage(originalPromise)
             ' unregister any observers once the promise is completed
             promises.internal.unobserveFieldScoped(originalPromise, promises.internal.PromiseField.promiseState)
             promiseStorage = promises.internal.getPromiseStorage(originalPromise, event)
@@ -800,19 +808,7 @@ namespace promises.internal
                 'TODO giant memory leak. if you see this, delete it immediately!
                 m.__promises__debug.push(promiseStorage)
             #end if
-
-            if promises.internal.hasStorage(originalPromise) then
-                ' There were listeners added as a result of some of the callback notifications
-                ' Re-trigger the notification process for the new listeners
-                if m.__promises__promisesPort <> invalid then
-                    promises.internal.notifyListeners(event)
-                else
-                    promises.internal.delay(sub (event as object)
-                        promises.internal.notifyListeners(event)
-                    end sub, event)
-                end if
-            end if
-        end if
+        end while
     end sub
 
     ' Used to check if there is a storage item of listeners for the supplied promise
