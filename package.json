@@ -11,16 +11,21 @@
     "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
     "test-package": "npx ts-node ./scripts/test-package.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts",
-    "package": "npm run build && npm run prepare-releases && npm pack"
+    "package": "npm run build && npm run prepare-releases && npm pack",
+    "audit": "npm audit || audit-ci --config ./audit-ci.jsonc"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5"
   },
   "devDependencies": {
     "@rokucommunity/bslint": "^0.8.41",
     "@types/fs-extra": "^11.0.1",
     "@types/node": "^20.6.0",
+    "audit-ci": "^7.1.0",
     "brighterscript": "0.69.11",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
-    "roku-deploy": "^3.16.5",
+    "roku-deploy": "^3.17.4",
     "rooibos-roku": "^5.15.7",
     "ropm": "^0.11.5",
     "semver": "^7.7.2",
