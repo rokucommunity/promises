@@ -1,6 +1,6 @@
 {
   "name": "@rokucommunity/promises",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "author": "RokuCommunity",
   "license": "MIT",
   "description": "A Promise-like implementation for BrightScript/Roku",
@@ -18,16 +18,16 @@
     "serialize-javascript": "^7.0.5"
   },
   "devDependencies": {
-    "@rokucommunity/bslint": "^0.8.41",
+    "@rokucommunity/bslint": "^0.8.43",
     "@types/fs-extra": "^11.0.1",
     "@types/node": "^20.6.0",
     "audit-ci": "^7.1.0",
-    "brighterscript": "0.69.11",
+    "brighterscript": "^0.72.5",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
-    "roku-deploy": "^3.17.4",
-    "rooibos-roku": "^5.15.7",
-    "ropm": "^0.11.7",
+    "roku-deploy": "^3.17.6",
+    "rooibos-roku": "^5.16.3",
+    "ropm": "^0.11.8",
     "semver": "^7.7.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"

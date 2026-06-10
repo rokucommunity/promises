@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.7.1](https://github.com/rokucommunity/promises/compare/0.7.0...v0.7.1) - 2026-06-10
+### Changed
+ - Security enhancements ([#76](https://github.com/rokucommunity/promises/pull/76)) ([#77](https://github.com/rokucommunity/promises/pull/77)) ([#78](https://github.com/rokucommunity/promises/pull/78)) ([#79](https://github.com/rokucommunity/promises/pull/79)) ([#80](https://github.com/rokucommunity/promises/pull/80))
+ - upgrade to [@rokucommunity/bslint@0.8.43](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0843---2026-05-12).
+   - Security enhancements
+ - upgrade to [brighterscript@0.72.5](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0725---2026-06-10).
+   - Security enhancements
+ - upgrade to [roku-deploy@3.17.6](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3176---2026-06-04).
+   - Security enhancements
+ - upgrade to [rooibos-roku@5.16.3](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5163---2026-05-20).
+   - Security enhancements
+ - upgrade to [ropm@0.11.8](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#0118---2026-05-30).
+   - Security enhancements
+
+
+
 ## [0.7.0](https://github.com/rokucommunity/promises/compare/0.6.7...v0.7.0) - 2026-04-21
 ### Added
  - Full promise support in Task threads ([#67](https://github.com/rokucommunity/promises/pull/67))
