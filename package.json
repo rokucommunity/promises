@@ -12,7 +12,7 @@
     "test-package": "npx ts-node ./scripts/test-package.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts",
     "package": "npm run build && npm run prepare-releases && npm pack",
-    "audit": "npm audit || audit-ci --config ./audit-ci.jsonc"
+    "audit": "npm audit --audit-level=high || audit-ci --config ./audit-ci.jsonc"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5"
