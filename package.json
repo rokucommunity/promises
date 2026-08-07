@@ -15,7 +15,9 @@
     "audit": "npm audit --audit-level=high || audit-ci --config ./audit-ci.jsonc"
   },
   "overrides": {
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.0.5",
+    "brace-expansion": "^2.1.4",
+    "ip-address": "^10.4.0"
   },
   "devDependencies": {
     "@rokucommunity/bslint": "^0.8.43",
