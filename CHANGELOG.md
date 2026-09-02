@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.7.2](https://github.com/rokucommunity/promises/compare/0.7.1...v0.7.2) - 2026-09-02
+### Changed
+ - Security enhancements ([#82](https://github.com/rokucommunity/promises/pull/82), [#84](https://github.com/rokucommunity/promises/pull/84), [#83](https://github.com/rokucommunity/promises/pull/83))
+ - upgrade to [@rokucommunity/bslint@0.8.44](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0844---2026-06-10). Notable changes since 0.8.43:
+ - upgrade to [brighterscript@0.73.1](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0731---2026-09-02). Notable changes since 0.72.5:
+ - upgrade to [roku-deploy@3.18.4](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3184---2026-09-02). Notable changes since 3.17.6:
+ - upgrade to [rooibos-roku@5.16.4](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5164---2026-06-10). Notable changes since 5.16.3:
+ - upgrade to [ropm@0.11.9](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#0119---2026-06-10). Notable changes since 0.11.8:
+
+
+
 ## [0.7.1](https://github.com/rokucommunity/promises/compare/0.7.0...v0.7.1) - 2026-06-10
 ### Changed
  - Security enhancements ([#76](https://github.com/rokucommunity/promises/pull/76)) ([#77](https://github.com/rokucommunity/promises/pull/77)) ([#78](https://github.com/rokucommunity/promises/pull/78)) ([#79](https://github.com/rokucommunity/promises/pull/79)) ([#80](https://github.com/rokucommunity/promises/pull/80))
