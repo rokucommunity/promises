@@ -14,13 +14,6 @@
     "package": "npm run build && npm run prepare-releases && npm pack",
     "audit": "npm audit --audit-level=high || audit-ci --config ./audit-ci.jsonc"
   },
-  "overrides": {
-    "serialize-javascript": "^7.0.5",
-    "brace-expansion": "^2.1.4",
-    "ip-address": "^10.4.0",
-    "qs": "^6.15.3",
-    "uuid": "^11.1.1"
-  },
   "devDependencies": {
     "@rokucommunity/bslint": "^0.8.43",
     "@types/fs-extra": "^11.0.1",
