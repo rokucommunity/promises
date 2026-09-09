@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.7.3](https://github.com/rokucommunity/promises/compare/0.7.2...v0.7.3) - 2026-09-09
+### Changed
+ - upgrade to [@rokucommunity/bslint@0.8.45](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0845---2026-09-02). Notable changes since 0.8.44:
+     - Security enhancements ([#196](https://github.com/rokucommunity/bslint/pull/196), [#198](https://github.com/rokucommunity/bslint/pull/198))
+ - upgrade to [brighterscript@0.73.3](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0733---2026-09-09). Notable changes since 0.73.1:
+     - Security enhancements ([#1796](https://github.com/rokucommunity/brighterscript/pull/1796))
+ - upgrade to [ropm@0.11.10](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#01110---2026-09-02). Notable changes since 0.11.9:
+     - Security enhancements ([#147](https://github.com/rokucommunity/ropm/pull/147), [#152](https://github.com/rokucommunity/ropm/pull/152), [#154](https://github.com/rokucommunity/ropm/pull/154), [#156](https://github.com/rokucommunity/ropm/pull/156))
+
+
+
 ## [0.7.2](https://github.com/rokucommunity/promises/compare/0.7.1...v0.7.2) - 2026-09-02
 ### Changed
  - Security enhancements ([#82](https://github.com/rokucommunity/promises/pull/82), [#84](https://github.com/rokucommunity/promises/pull/84), [#83](https://github.com/rokucommunity/promises/pull/83))
