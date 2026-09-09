@@ -9,27 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.3](https://github.com/rokucommunity/promises/compare/0.7.2...v0.7.3) - 2026-09-09
 ### Changed
  - upgrade to [@rokucommunity/bslint@0.8.45](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0845---2026-09-02). Notable changes since 0.8.44:
-     - fix: restrict CreateObject component usage detection ([#197](https://github.com/rokucommunity/bslint/pull/197))
      - Security enhancements ([#196](https://github.com/rokucommunity/bslint/pull/196), [#198](https://github.com/rokucommunity/bslint/pull/198))
  - upgrade to [brighterscript@0.73.3](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0733---2026-09-09). Notable changes since 0.73.1:
-     - Modifies default max worker thread logic to be only as much as memory allows ([#1798](https://github.com/rokucommunity/brighterscript/pull/1798))
      - Security enhancements ([#1796](https://github.com/rokucommunity/brighterscript/pull/1796))
-     - Transpile continue down for firmware below 11.5 ([#489](https://github.com/rokucommunity/brighterscript/pull/489))
-     - Better error message for wrong-cased XML tags ([#1793](https://github.com/rokucommunity/brighterscript/pull/1793))
-     - Add `isTerminal` and `previousInChain` getters to AstNode ([#1788](https://github.com/rokucommunity/brighterscript/pull/1788))
-     - Add generic go-to-definition for file path strings in BRS/BS/XML files ([#1648](https://github.com/rokucommunity/brighterscript/pull/1648))
-     - Fix duplicate and crashing "find all references" results ([#1791](https://github.com/rokucommunity/brighterscript/pull/1791))
-     - Fix nested curly braces in template strings ([#1539](https://github.com/rokucommunity/brighterscript/pull/1539))
-     - Recognize regex literals after `${` and `,` ([#1789](https://github.com/rokucommunity/brighterscript/pull/1789))
-     - Infer node type from findAncestor type-guard matchers ([#1787](https://github.com/rokucommunity/brighterscript/pull/1787))
-     - Enable @typescript-eslint/no-unsafe-argument ([#1785](https://github.com/rokucommunity/brighterscript/pull/1785))
-     - Avoid emitting a duplicate sourceMappingURL comment ([#1786](https://github.com/rokucommunity/brighterscript/pull/1786))
-     - Reduce per-Token lexer allocation to cut GC pressure while editing ([#1712](https://github.com/rokucommunity/brighterscript/pull/1712))
  - upgrade to [ropm@0.11.10](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#01110---2026-09-02). Notable changes since 0.11.9:
      - Security enhancements ([#147](https://github.com/rokucommunity/ropm/pull/147), [#152](https://github.com/rokucommunity/ropm/pull/152), [#154](https://github.com/rokucommunity/ropm/pull/154), [#156](https://github.com/rokucommunity/ropm/pull/156))
-     - Add pnpm support via pluggable package-manager classes ([#145](https://github.com/rokucommunity/ropm/pull/145))
-     - Replace glob-all with fast-glob ([#153](https://github.com/rokucommunity/ropm/pull/153))
-     - Bump qs and roku-deploy ([#149](https://github.com/rokucommunity/ropm/pull/149))
 
 
 
