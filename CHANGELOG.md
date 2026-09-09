@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.7.4](https://github.com/rokucommunity/promises/compare/0.7.3...v0.7.4) - 2026-09-09
+### Changed
+ - upgrade to [@rokucommunity/bslint@0.8.46](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0846---2026-09-09). Notable changes since 0.8.45:
+     - Add sorted-imports rule ([#202](https://github.com/rokucommunity/bslint/pull/202))
+     - Security enhancements ([#203](https://github.com/rokucommunity/bslint/pull/203))
+ - upgrade to [rooibos-roku@5.16.5](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5165---2026-09-09). Notable changes since 5.16.4:
+     - Fix coverage instrumentation changing constructor execution order ([#355](https://github.com/rokucommunity/rooibos/pull/355))
+     - Security enhancements ([#405](https://github.com/rokucommunity/rooibos/pull/405), [#406](https://github.com/rokucommunity/rooibos/pull/406), [#407](https://github.com/rokucommunity/rooibos/pull/407), [#409](https://github.com/rokucommunity/rooibos/pull/409), [#410](https://github.com/rokucommunity/rooibos/pull/410), [#411](https://github.com/rokucommunity/rooibos/pull/411), [#412](https://github.com/rokucommunity/rooibos/pull/412), [#414](https://github.com/rokucommunity/rooibos/pull/414), [#421](https://github.com/rokucommunity/rooibos/pull/421))
+     - Make before-exit sleep duration configurable ([#418](https://github.com/rokucommunity/rooibos/pull/418))
+     - chore: show error during tests when ropm modules are missing ([#420](https://github.com/rokucommunity/rooibos/pull/420))
+     - fix: skip assertion tracking injection for namespace function calls ([#385](https://github.com/rokucommunity/rooibos/pull/385))
+     - chore: Add a device-test config for exercising the CLI ([#417](https://github.com/rokucommunity/rooibos/pull/417))
+     - Upgrade to roku-debug 0.24 and roku-deploy v4 ([#416](https://github.com/rokucommunity/rooibos/pull/416))
+     - Run stubCall/expectCalled/expectNotCalled rewrites in setUp/tearDown/beforeEach/afterEach hooks ([#403](https://github.com/rokucommunity/rooibos/pull/403))
+ - upgrade to [ropm@0.11.11](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#01111---2026-09-09). Notable changes since 0.11.10:
+     - Security enhancements ([#159](https://github.com/rokucommunity/ropm/pull/159))
+     - Fix typedef prefixing: namespace-relative refs, roSGNode types, brsdoc comments ([#158](https://github.com/rokucommunity/ropm/pull/158))
+
+
+
 ## [0.7.3](https://github.com/rokucommunity/promises/compare/0.7.2...v0.7.3) - 2026-09-09
 ### Changed
  - upgrade to [@rokucommunity/bslint@0.8.45](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0845---2026-09-02). Notable changes since 0.8.44:
