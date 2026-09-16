@@ -25,6 +25,8 @@ jobs:
       - run: npm run build
       - run: npm run test
       - name: Upload coverage to Coveralls
+        #upload coverage even when tests fail, so a red run still reports its numbers
+        if: always()
         uses: coverallsapp/github-action@v2
         env:
           #hardcode the coveralls token...it's not overly important to protect, and github actions won't allow forks to work with coveralls otherwise

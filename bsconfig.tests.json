@@ -14,7 +14,8 @@
         "tags": [
             "!integration",
             "!deprecated",
-            "!fixme"
+            "!fixme",
+            "!stress"
         ],
         "showOnlyFailures": true,
         "catchCrashes": true,

@@ -8,7 +8,7 @@
     "preversion": "npm run build && npm run prepare-releases",
     "build": "bsc",
     "build-tests": "bsc --project bsconfig.tests.json",
-    "test": "npm run build-tests && npx ts-node ./scripts/runUnitTestsOnDevice.ts",
+    "test": "rooibos --project bsconfig.tests.json --coverage-html ./coverage/html",
     "test-package": "npx ts-node ./scripts/test-package.ts",
     "prepare-releases": "npx ts-node ./scripts/prepare-releases.ts",
     "package": "npm run build && npm run prepare-releases && npm pack",
