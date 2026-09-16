@@ -1,11 +1,19 @@
 import * as Net from 'net';
 import * as rokuDeploy from 'roku-deploy';
+import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 dotenv.config();
 const env = process.env;
 
-env.CODE_COVERAGE = '';
+// Code coverage is on by default. Set CODE_COVERAGE=false to turn it off (it roughly doubles the test runtime).
+if (env.CODE_COVERAGE === undefined) {
+	env.CODE_COVERAGE = 'true';
+} else if (env.CODE_COVERAGE === 'false') {
+	env.CODE_COVERAGE = '';
+}
+
+const LCOV_PATH = path.join(process.cwd(), 'coverage', 'lcov.info');
 
 const LOG_BREAK = '\n----- ';
 
@@ -48,6 +56,11 @@ export class UnitTestRunner {
 		await testResultsPromise;
 
 		this.ioClient.end();
+
+		if (env.CODE_COVERAGE) {
+			// write this before the failure check below so coverage survives a failing run
+			this.codeCoverage.writeLcovFile(LCOV_PATH);
+		}
 
 		console.log(LOG_BREAK, `Testing Completed:`);
 		if (!this.results.pass) {
@@ -248,10 +261,53 @@ class CodeCoverage {
 
 	public missedFiles: Array<string> = [];
 
+	/**
+	 * Lines of the lcov report, captured between rooibos' `+-=-coverage:start` and `+-=-coverage:end` markers
+	 */
+	private lcovLines: string[] = [];
+
+	private isCapturingLcov = false;
+
 	public processLogLine(line) {
 		this.parseForTotalCoverageAndLineSummery(line);
 		this.parseForFilesSummery(line);
 		this.parseForFilesMissedAndCoveredFiles(line);
+		this.parseForLcov(line);
+	}
+
+	private parseForLcov(line: string) {
+		const trimmed = line.trim();
+		if (trimmed.endsWith('+-=-coverage:start')) {
+			this.isCapturingLcov = true;
+		} else if (trimmed.endsWith('+-=-coverage:end')) {
+			this.isCapturingLcov = false;
+		} else if (this.isCapturingLcov && trimmed.length > 0) {
+			this.lcovLines.push(trimmed);
+		}
+	}
+
+	/**
+	 * Rooibos emits `SF:` paths relative to the roku package root (i.e. `./source/promises.brs`), pointing at the
+	 * transpiled output. Rewrite them to the `.bs` sources in `src/` so coveralls can line them up with the repo.
+	 */
+	private normalizeSourcePath(sourceFilePath: string) {
+		let result = sourceFilePath.replace(/^\.\//, '').replace(/\\/g, '/');
+		result = `src/${result}`;
+		return result.replace(/\.brs$/, '.bs');
+	}
+
+	public writeLcovFile(lcovPath: string) {
+		if (this.lcovLines.length === 0) {
+			console.log(`No lcov data was captured from the device logs. Skipping write of ${lcovPath}`);
+			return false;
+		}
+		const lines = this.lcovLines.map((line) => {
+			const match = /^SF:(.*)$/.exec(line);
+			return match ? `SF:${this.normalizeSourcePath(match[1])}` : line;
+		});
+		fsExtra.outputFileSync(lcovPath, `${lines.join('\n')}\n`);
+		console.log(`Wrote lcov report to ${lcovPath}`);
+		return true;
 	}
 
 	private parseForTotalCoverageAndLineSummery(line) {
