@@ -2345,6 +2345,7 @@ namespace tests
         @describe("unravels deep promise chain without crashing due to stackoverflow (This might take a while...)")
         '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+        @tags("stress")
         @async(60000)
         @it("unravels deep promise chain without crashing due to stackoverflow")
         function _()
@@ -2585,6 +2586,7 @@ namespace tests
             end function)
         end function
 
+        @tags("stress")
         @async(60000)
         @it("deep chain in task mode does not overflow the stack")
         function _()

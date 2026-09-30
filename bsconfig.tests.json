@@ -7,13 +7,15 @@
         "rooibos-roku"
     ],
     "rooibos": {
-        "isRecordingCodeCoverage": false,
+        "isRecordingCodeCoverage": true,
+        "printLcov": true,
         "isGlobalMethodMockingEnabled": true,
         "testsFilePattern": null,
         "tags": [
             "!integration",
             "!deprecated",
-            "!fixme"
+            "!fixme",
+            "!stress"
         ],
         "showOnlyFailures": true,
         "catchCrashes": true,
