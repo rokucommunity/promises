@@ -9,7 +9,12 @@ env:
 
 jobs:
   ci:
-    runs-on: [self-hosted, roku-latest, enabled]
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [bronley-a1, bronley-a2, bronley-a3, bronley-a4, bronley-a5, bronley-a6, bronley-a7, bronley-b1]
+    name: ci (${{ matrix.runner }})
+    runs-on: [self-hosted, "${{ matrix.runner }}"]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@master
