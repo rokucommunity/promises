@@ -3,5 +3,10 @@
     // why each allowlisted entry is safe to defer.
     "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
     "high": true,
-    "allowlist": []
+    "allowlist": [
+        // Added 2026-10-03. braces <=3.0.3 stack exhaustion on deeply nested patterns; no patched
+        // version exists. Only reachable via devDependency brighterscript (build tooling) globbing
+        // repo-controlled patterns; not in the published package (`npm audit --omit=dev` is clean).
+        "GHSA-vfj7-8cjw-p6xm"
+    ]
 }
