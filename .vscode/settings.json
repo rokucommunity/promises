@@ -8,5 +8,25 @@
         "**/Thumbs.db": true,
         "**/node_modules": true
     },
-    "brightscript.bsdk": "./node_modules/brighterscript"
+    "[brightscript]": {
+        "editor.formatOnSave": true
+    },
+    "[brighterscript]": {
+        "editor.formatOnSave": true
+    },
+    "[typescript]": {
+        "editor.formatOnSave": true
+    },
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "typescript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": true,
+    "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": false,
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+    "brightscript.bsdk": "./node_modules/brighterscript",
+    "brightscript.projects": [
+        "bsconfig.json",
+        "bsconfig.tests.json"
+    ]
 }

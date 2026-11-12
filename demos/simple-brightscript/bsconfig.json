@@ -1,8 +1,20 @@
 {
-  "files": [
-    "manifest",
-    "source/**/*.*",
-    "components/**/*.*",
-    "images/**/*.*"
-  ]
+    "stagingDir": "../../dist/demos/simple-brightscript",
+    "retainStagingDir": true,
+    "createPackage": false,
+    "sourceMap": true,
+    "files": [
+        "manifest",
+        "source/**/*.*",
+        "components/**/*.*",
+        "images/**/*.*",
+        {
+            "src": "../../src/components/Promise.xml",
+            "dest": "components/Promise.xml"
+        },
+        {
+            "src": "../../src/source/promises.bs",
+            "dest": "source/promises.bs"
+        }
+    ]
 }

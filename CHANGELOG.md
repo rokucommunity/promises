@@ -6,6 +6,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.7.4](https://github.com/rokucommunity/promises/compare/0.7.3...v0.7.4) - 2026-09-09
+### Changed
+ - upgrade to [@rokucommunity/bslint@0.8.46](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0846---2026-09-09). Notable changes since 0.8.45:
+ - upgrade to [rooibos-roku@5.16.5](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5165---2026-09-09). Notable changes since 5.16.4:
+     - Security enhancements ([#405](https://github.com/rokucommunity/rooibos/pull/405), [#406](https://github.com/rokucommunity/rooibos/pull/406), [#407](https://github.com/rokucommunity/rooibos/pull/407), [#409](https://github.com/rokucommunity/rooibos/pull/409), [#410](https://github.com/rokucommunity/rooibos/pull/410), [#411](https://github.com/rokucommunity/rooibos/pull/411), [#412](https://github.com/rokucommunity/rooibos/pull/412), [#414](https://github.com/rokucommunity/rooibos/pull/414), [#421](https://github.com/rokucommunity/rooibos/pull/421))
+ - upgrade to [ropm@0.11.11](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#01111---2026-09-09). Notable changes since 0.11.10:
+     - Security enhancements ([#159](https://github.com/rokucommunity/ropm/pull/159))
+
+
+
+## [0.7.3](https://github.com/rokucommunity/promises/compare/0.7.2...v0.7.3) - 2026-09-09
+### Changed
+ - upgrade to [@rokucommunity/bslint@0.8.45](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0845---2026-09-02). Notable changes since 0.8.44:
+     - Security enhancements ([#196](https://github.com/rokucommunity/bslint/pull/196), [#198](https://github.com/rokucommunity/bslint/pull/198))
+ - upgrade to [brighterscript@0.73.3](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0733---2026-09-09). Notable changes since 0.73.1:
+     - Security enhancements ([#1796](https://github.com/rokucommunity/brighterscript/pull/1796))
+ - upgrade to [ropm@0.11.10](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#01110---2026-09-02). Notable changes since 0.11.9:
+     - Security enhancements ([#147](https://github.com/rokucommunity/ropm/pull/147), [#152](https://github.com/rokucommunity/ropm/pull/152), [#154](https://github.com/rokucommunity/ropm/pull/154), [#156](https://github.com/rokucommunity/ropm/pull/156))
+
+
+
+## [0.7.2](https://github.com/rokucommunity/promises/compare/0.7.1...v0.7.2) - 2026-09-02
+### Changed
+ - Security enhancements ([#82](https://github.com/rokucommunity/promises/pull/82), [#84](https://github.com/rokucommunity/promises/pull/84), [#83](https://github.com/rokucommunity/promises/pull/83))
+ - upgrade to [@rokucommunity/bslint@0.8.44](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0844---2026-06-10). Notable changes since 0.8.43:
+ - upgrade to [brighterscript@0.73.1](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0731---2026-09-02). Notable changes since 0.72.5:
+ - upgrade to [roku-deploy@3.18.4](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3184---2026-09-02). Notable changes since 3.17.6:
+ - upgrade to [rooibos-roku@5.16.4](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5164---2026-06-10). Notable changes since 5.16.3:
+ - upgrade to [ropm@0.11.9](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#0119---2026-06-10). Notable changes since 0.11.8:
+
+
+
+## [0.7.1](https://github.com/rokucommunity/promises/compare/0.7.0...v0.7.1) - 2026-06-10
+### Changed
+ - Security enhancements ([#76](https://github.com/rokucommunity/promises/pull/76)) ([#77](https://github.com/rokucommunity/promises/pull/77)) ([#78](https://github.com/rokucommunity/promises/pull/78)) ([#79](https://github.com/rokucommunity/promises/pull/79)) ([#80](https://github.com/rokucommunity/promises/pull/80))
+ - upgrade to [@rokucommunity/bslint@0.8.43](https://github.com/rokucommunity/bslint/blob/master/CHANGELOG.md#0843---2026-05-12).
+   - Security enhancements
+ - upgrade to [brighterscript@0.72.5](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#0725---2026-06-10).
+   - Security enhancements
+ - upgrade to [roku-deploy@3.17.6](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3176---2026-06-04).
+   - Security enhancements
+ - upgrade to [rooibos-roku@5.16.3](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5163---2026-05-20).
+   - Security enhancements
+ - upgrade to [ropm@0.11.8](https://github.com/rokucommunity/ropm/blob/master/CHANGELOG.md#0118---2026-05-30).
+   - Security enhancements
+
+
+
+## [0.7.0](https://github.com/rokucommunity/promises/compare/0.6.7...v0.7.0) - 2026-04-21
+### Added
+ - Full promise support in Task threads ([#67](https://github.com/rokucommunity/promises/pull/67))
+### Changed
+ - Better context param mismatch handling ([#69](https://github.com/rokucommunity/promises/pull/69))
+ - Reduce data cloning ([#68](https://github.com/rokucommunity/promises/pull/68))
+ - upgrade to [roku-deploy@3.16.5](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3165---2026-04-13). Notable changes since 3.14.4:
+
+
+
+## [0.6.7](https://github.com/rokucommunity/promises/compare/0.6.6...v0.6.7) - 2025-10-31
+### Fixed
+ - Fix `repositoryUrl` ([529b745](https://github.com/rokucommunity/promises/commit/529b745))
+ - Fix issue with default function callbacks being incorrectly prefixed ([#58](https://github.com/rokucommunity/promises/pull/58))
+ - chore: fix link to roku-promise in README.md ([#56](https://github.com/rokucommunity/promises/pull/56))
+
+
+
+## [0.6.6](https://github.com/rokucommunity/promises/compare/0.6.5...v0.6.6) - 2025-06-14
+### Fixed
+ - bug in publishing flow that wasn't properly preparing the package for npm publishing ([#](https://github.com/rokucommunity/promises/pull/52))
+
+
+
+## [0.6.5](https://github.com/rokucommunity/promises/compare/0.6.4...v0.6.5) - 2025-06-10
+### Changed
+ - Change bslint to a devDependency ([#50](https://github.com/rokucommunity/promises/pull/50))
+
+
+
+## [0.6.4](https://github.com/rokucommunity/promises/compare/0.6.3...v0.6.4) - 2025-06-10
+### Changed
+ - upgrade to [brighterscript@0.69.10](https://github.com/rokucommunity/brighterscript/blob/master/CHANGELOG.md#06910---2025-06-03). Notable changes since 0.65.5:
+ - upgrade to [roku-deploy@3.12.6](https://github.com/rokucommunity/roku-deploy/blob/master/CHANGELOG.md#3126---2025-06-03). Notable changes since 3.10.3:
+ - upgrade to [rooibos-roku@5.15.7](https://github.com/rokucommunity/rooibos/blob/master/CHANGELOG.md#5157---2025-04-16). Notable changes since 5.15.6:
+ - chore: linting ([#42](https://github.com/rokucommunity/promises/pull/42))
+ - chore: update the demo with the latest code ([#37](https://github.com/rokucommunity/promises/pull/37))
+ - chore: an issue where the LSP was not detecting the demo folder as a project ([#38](https://github.com/rokucommunity/promises/pull/38))
+### Fixed
+ - bug in preprocessing script that missed some default arg prefixing ([#47](https://github.com/rokucommunity/promises/pull/47))
+ - wrong error message when missing context and add listener location debugging ([#40](https://github.com/rokucommunity/promises/pull/40))
+
+
+
 ## [0.6.3](https://github.com/rokucommunity/promises/compare/v0.6.2...0.6.3) - 2025-03-26
 ### Fixed
  - Issue that resulted in needing bslib as a dependancy ([#36](https://github.com/rokucommunity/promises/pull/36))

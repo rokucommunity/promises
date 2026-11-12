@@ -1,7 +1,10 @@
 {
     "files": [
         "**/*",
-        "!**/*.spec.bs"
+        "!**/*.spec.*"
+    ],
+    "plugins": [
+        "@rokucommunity/bslint"
     ],
     "rootDir": "./src",
     "stagingDir": "./dist",

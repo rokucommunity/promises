@@ -27,6 +27,7 @@ function setVersionNumber() {
     replaceInFile(s`${distDir}/components/Promise.xml`, versionReplacement);
     replaceInFile(s`${distDir}/source/promises.brs`, versionReplacement);
     replaceInFile(s`${distDir}/source/promises.d.bs`, versionReplacement);
+    replaceInFile(s`${distDir}/source/promises.d.bs`, versionReplacement);
 }
 
 function removeBslib() {
@@ -59,6 +60,7 @@ async function prepareForNpm() {
 
     //remove the `promises.namespace stuff` from d.bs files
     replaceInFile(s`${distDir}/source/promises.d.bs`,
+        [/\bpromises_/g, ''],
         [/namespace promises\r?\n/, ''],
         [/end namespace\r?\n\s*namespace promises\.configuration/, 'namespace configuration'],
         [/namespace promises\.internal/, 'namespace internal'],

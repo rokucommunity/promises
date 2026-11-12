@@ -1,9 +1,16 @@
 ' @rokucommunity/promises ${VERSION_NUMBER}
+
+' Enable verbose debugging of the promises library
 #const PROMISES_DEBUG = false
+
+' Enable the generation of a stack trace when a callback is registered for a promise
+' This can later be used to find the registration location of the promise in
+' the code. This is useful for debugging promise chains that are not working as expected.
+#const PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION = false
 
 namespace promises
     ' Create a new promise
-    ' @return {roSGNodePromise }
+    ' @return {roSGNodePromise}
     function create() as dynamic
         'create a unique ID for this promise
         id = "promise-" + promises.internal.createUuid()
@@ -14,9 +21,6 @@ namespace promises
             end if
             m.__promises__idSequence++
             id = "promise-" + m.__promises__idSequence.ToStr()
-        #end if
-
-        #if PROMISES_DEBUG
             print "[promises.create]", id
         #end if
         node = createObject("roSGNode", "Promise")
@@ -30,32 +34,37 @@ namespace promises
     ' @param {Function} [callback=promises.internal.defaultThenCallback]
     ' @param {object} [context="__INVALID__"]
     ' @return {roSGNodePromise}
-    function onThen(promise as dynamic, callback = promises.internal.defaultThenCallback as function, context = "__INVALID__" as object) as dynamic
+    function onThen(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        if callback = invalid then callback = promises.internal.defaultThenCallback
         return promises.internal.on("then", promise, callback, context)
     end function
 
     ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
     '
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultThenCallback]
+    ' @param {Function} [callback=promises.internal.defaultCatchCallback]
     ' @param {object} [context="__INVALID__"]
     ' @return {roSGNodePromise}
-    function onCatch(promise as dynamic, callback = promises.internal.defaultCatchCallback as function, context = "__INVALID__" as object) as dynamic
+    function onCatch(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        if callback = invalid then callback = promises.internal.defaultCatchCallback
         return promises.internal.on("catch", promise, callback, context)
     end function
 
     ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
+    '
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultThenCallback]
+    ' @param {Function} [callback=promises.internal.defaultFinallyCallback]
     ' @param {object} [context="__INVALID__"]
     ' @return {roSGNodePromise}
-    function onFinally(promise as dynamic, callback = promises.internal.defaultFinallyCallback as function, context = "__INVALID__" as object) as dynamic
+    function onFinally(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        if callback = invalid then callback = promises.internal.defaultFinallyCallback
         return promises.internal.on("finally", promise, callback, context)
     end function
 
     ' The Promise.try() method takes a callback of any kind (returns or throws, synchronously or asynchronously) and wraps its result in a Promise.
     ' @param {function} callback - The callback to wrap in a promise
     ' @param {dynamic} args - The arguments to pass to the callback. Max 32 arguments.
+    ' @return {roSGNodePromise}
     function try(callback as function, args = invalid as dynamic) as dynamic
         try
             result = promises.internal.callWithArgs(callback, args)
@@ -107,7 +116,7 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, {state: state, index: i})
+                    end sub, { state: state, index: i })
 
                     promises.onCatch(promise, sub(error as dynamic, state as dynamic)
                         ' This shouldn't happen but if we somehow get a rejected promise after
@@ -184,7 +193,7 @@ namespace promises
                         if not context.state.done then
                             ' Always assign the result to the origin index so results are in the same
                             ' order as the supplied promiseArray
-                            context.state.results[context.index] = {status: promises.PromiseState.resolved, value: result}
+                            context.state.results[context.index] = { status: promises.PromiseState.resolved, value: result }
                             context.state.resolvedCount++
 
                             if context.state.resolvedCount = context.state.total then
@@ -194,7 +203,7 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, {state: state, index: i})
+                    end sub, { state: state, index: i })
 
                     promises.onCatch(promise, sub(error as dynamic, context as dynamic)
                         ' Do not process any promises that come in late
@@ -202,7 +211,7 @@ namespace promises
                         if not context.state.done then
                             ' Always assign the result to the origin index so results are in the same
                             ' order as the supplied promiseArray
-                            context.state.results[context.index] = {status: promises.PromiseState.rejected, reason: error}
+                            context.state.results[context.index] = { status: promises.PromiseState.rejected, reason: error }
                             context.state.resolvedCount++
 
                             if context.state.resolvedCount = context.state.total then
@@ -212,11 +221,11 @@ namespace promises
                                 promises.resolve(context.state.results, context.state.deferred)
                             end if
                         end if
-                    end sub, {state: state, index: i})
+                    end sub, { state: state, index: i })
                 else
                     ' The value in the promise array is not a promise.
                     ' Immediately set the result.
-                    state.results[i] = {status: promises.PromiseState.resolved, value: promise}
+                    state.results[i] = { status: promises.PromiseState.resolved, value: promise }
                     state.resolvedCount++
 
                     if state.resolvedCount = state.total then
@@ -298,13 +307,13 @@ namespace promises
                                     ' Resolve the deferred and make the state as complete
                                     context.state.done = true
                                     try
-                                        throw {message: "All promises were rejected", errors: context.state.errors}
+                                        throw { message: "All promises were rejected", errors: context.state.errors }
                                     catch e
                                         promises.reject(e, context.state.deferred)
                                     end try
                                 end if
                             end if
-                        end sub, {state: state, index: i})
+                        end sub, { state: state, index: i })
                     end if
                 else
                     ' The value in the promise array is not a promise.
@@ -318,7 +327,7 @@ namespace promises
         else
             ' We can't resolve with a promise if there are no promises to resolve
             try
-                throw {message: "All promises were rejected", errors: []}
+                throw { message: "All promises were rejected", errors: [] }
             catch e
                 promises.reject(e, deferred)
             end try
@@ -389,7 +398,7 @@ namespace promises
         else
             ' We can't resolve with a promise if there are no promises to resolve
             try
-                throw {message: "All promises were rejected", errors: []}
+                throw { message: "All promises were rejected", errors: [] }
             catch e
                 promises.reject(e, deferred)
             end try
@@ -410,9 +419,9 @@ namespace promises
             ' console.trace("[promises.resolve]", promise.id)
             if type(result) = "roAssociativeArray" then
                 promise.removeField("promiseResult")
-                promise.addFields({promiseResult: result})
+                promise.addFields({ promiseResult: result })
             else
-                promise.update({promiseResult: result}, true)
+                promise.update({ promiseResult: result }, true)
             end if
             promise.promiseState = promises.PromiseState.resolved
         end if
@@ -431,17 +440,15 @@ namespace promises
             ' console.trace("[promises.reject]", promise.id)
             if type(error) = "roAssociativeArray" then
                 promise.removeField("promiseResult")
-                promise.addFields({promiseResult: error})
+                promise.addFields({ promiseResult: error })
             else
-                promise.update({promiseResult: error}, true)
+                promise.update({ promiseResult: error }, true)
             end if
             promise.promiseState = promises.PromiseState.rejected
         end if
         return promise
     end function
 
-    '
-    '
     ' @param {roSGNodePromise} promise
     ' @return {boolean}
     function isComplete(promise as object) as boolean
@@ -483,6 +490,17 @@ namespace promises
         return promise.hasField(promises.internal.PromiseField.promiseState)
     end function
 
+    ' Determines if the given node event was triggered on a promise like node.
+    '
+    ' @param {dynamic} event
+    ' @return {boolean}
+    function isPromiseEvent(event as dynamic) as boolean
+        if not type(event) = "roSGNodeEvent" then
+            return false
+        end if
+        return lCase(event.getField()) = promises.internal.PromiseField.promiseStateLowerCase
+    end function
+
     ' Remove all promise storage from the current m
     sub clean()
         for each key in m
@@ -508,17 +526,20 @@ namespace promises
         return {
             _lastPromise: initialPromise
             _context: context
-            then: function(callback = promises.internal.defaultThenCallback as function) as object
+            then: function(callback = invalid as dynamic) as object
+                if callback = invalid then callback = promises.internal.defaultThenCallback
                 m._lastPromise = promises.onThen(m._lastPromise, callback, m._context)
                 return m
             end function
 
-            "catch": function(callback = promises.internal.defaultCatchCallback as function) as object
+            "catch": function(callback = invalid as dynamic) as object
+                if callback = invalid then callback = promises.internal.defaultCatchCallback
                 m._lastPromise = promises.onCatch(m._lastPromise, callback, m._context)
                 return m
             end function
 
-            finally: function(callback = promises.internal.defaultFinallyCallback as function) as object
+            finally: function(callback = invalid as dynamic) as object
+                if callback = invalid then callback = promises.internal.defaultFinallyCallback
                 m._lastPromise = promises.onFinally(m._lastPromise, callback, m._context)
                 return m
             end function
@@ -527,6 +548,128 @@ namespace promises
                 return m._lastPromise
             end function
         }
+    end function
+
+    ' Set the message port that promise events are delivered to (instead of field observer callbacks)
+    '
+    ' @param {roMessagePort} port
+    sub setMessagePort(port as dynamic)
+        m.__promises__promisesPort = port
+    end sub
+
+    ' Get the message port registered via `promises.setMessagePort()`
+    '
+    ' @return {roMessagePort}
+    function getMessagePort() as dynamic
+        return m.__promises__promisesPort
+    end function
+
+    ' First, consume and process all promise events from the front of the queue.
+    ' This method is similar to the GetMessage() method, but the returned object (if not invalid) remains in the message queue.
+    ' A later call to WaitMessage(), GetMessage() or PeekMessage() will return the same message.
+    '
+    ' @param {roMessagePort} port
+    ' @return {dynamic}
+    function peekMessage(port as dynamic) as dynamic
+        while true
+            message = port.peekMessage()
+
+            'if this is a promise event, process it and peek again
+            if promises.isPromiseEvent(message) then
+                'remove the message from the queue and process it
+                message = port.getMessage()
+                promises.internal.notifyListeners(message)
+                continue while
+            end if
+
+            return message
+        end while
+        return invalid
+    end function
+
+
+    ' First, consume and process all promise events from the front of the queue.
+    ' Then, if an event object is available, it is returned. Otherwise `invalid` is returned. The method returns immediately in either case and does not wait.
+    '
+    ' @param {roMessagePort} port
+    ' @return {dynamic}
+    function getMessage(port as dynamic) as dynamic
+        if promises.peekMessage(port) <> invalid then
+            return port.getMessage()
+        end if
+
+        return invalid
+    end function
+
+
+    ' Same capabilities as the native `wait()` function, except that promise events are automatically processed and removed from its registered `roMessagePort` provided in `promises.setMessagePort()`.
+    '
+    ' @param {integer} timeoutMilliseconds
+    ' @param {roMessagePort} port
+    ' @return {dynamic}
+    function wait2(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
+        promisesPort = promises.getMessagePort()
+        'bs:disable-next-line
+        utils = createObject("roUtils")
+        portIsPromisesPort = false
+
+        ' if the promise port is the same as the supplied port (and we can actually use roUtils to compare same-ness)
+        if utils <> invalid and utils.isSameObject(port, promisesPort) then
+            portIsPromisesPort = true
+        end if
+
+        timespan = createObject("roTimeSpan")
+
+        while true
+            currentDuration = timespan.TotalMilliseconds()
+            'if we are not waiting indefinitely
+            if timeoutMilliseconds > 0 then
+                ' if the duration has exceeded the wait time, exit and return invalid
+                if currentDuration >= timeoutMilliseconds then
+                    return invalid
+
+                    'the duration has not exceeded the wait time. compute how much time we have left
+                else
+                    thisTickTimeout = timeoutMilliseconds - currentDuration
+                end if
+            else
+                thisTickTimeout = timeoutMilliseconds
+            end if
+            'ensure we don't wait too long in a single tick (so promises still have time to resolve)
+            'preserve true indefinite waits when waiting directly on the promises port
+            if thisTickTimeout > 200 or (thisTickTimeout = 0 and not portIsPromisesPort) then
+                thisTickTimeout = 200
+            end if
+
+            'if the port we're waiting on is the promises port, then no need for the double-latch
+            if portIsPromisesPort then
+                event = wait(thisTickTimeout, port)
+                if promises.isPromiseEvent(event) then
+                    promises.internal.notifyListeners(event)
+                    continue while
+                end if
+                return event
+            else
+                'flush all pending promises on the promise port
+                messagePort = promises.getMessagePort()
+                if messagePort <> invalid then
+                    promises.peekMessage(messagePort)
+                end if
+
+                'wait a little bit for an event on the supplied port
+                event = wait(thisTickTimeout, port)
+
+                'if the message was a promise event, handle it
+                if promises.isPromiseEvent(event) then
+                    promises.internal.notifyListeners(event)
+                    continue while
+                else
+                    'it's not a promise event! return it
+                    return event
+                end if
+            end if
+        end while
+        return invalid
     end function
 
     ' Makes sure the value supplied is a promise
@@ -556,7 +699,7 @@ namespace promises.configuration
         globalNode = m.global
         if type(globalNode) = "roSGNode" then
             if enabled then
-                globalNode.update({__promises__crashLoggingEnabled: enabled}, true)
+                globalNode.update({ __promises__crashLoggingEnabled: enabled }, true)
             else
                 globalNode.removeField("__promises__crashLoggingEnabled")
             end if
@@ -576,11 +719,18 @@ namespace promises.internal
     enum PromiseField
         promiseState = "promiseState"
         promiseResult = "promiseResult"
+        promiseStateLowerCase = "promisestate"
+        promiseResultLowerCase = "promiseresult"
     end enum
 
     ' Clear storage for a given promise
-    sub clearPromiseStorage(promise as object)
-        m.delete("__promises__" + promise.id)
+    sub clearPromiseStorage(promise as object, nodeEvent = invalid as dynamic)
+        if nodeEvent <> invalid then
+            id = "__promises__" + nodeEvent.getNode()
+        else
+            id = "__promises__" + promise.id
+        end if
+        m.delete(id)
     end sub
 
     function getLibPath() as string
@@ -598,20 +748,26 @@ namespace promises.internal
     end function
 
     ' Get the storage for a promise on `m`
-    function getPromiseStorage(promise as object) as object
-        id = "__promises__" + promise.id
+    function getPromiseStorage(promise as object, nodeEvent = invalid as dynamic) as object
+        if nodeEvent <> invalid then
+            id = "__promises__" + nodeEvent.getNode()
+        else
+            id = "__promises__" + promise.id
+        end if
 
         storage = m[id]
+
+        ' Only create storage and register observers if it does not exist
         if storage = invalid then
+            callback = m.__promises__promisesPort <> invalid ? m.__promises__promisesPort : sub(event as dynamic)
+                'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
+                promises.internal.delay(sub(context as dynamic)
+                    promises.internal.notifyListeners(context.event)
+                end sub, { event: event })
+            end sub
             ' unregister any observers on the promise to prevent multiple callbacks
             promises.internal.unobserveFieldScoped(promise, promises.internal.PromiseField.promiseState)
-            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, sub(event)
-                'run the notification nexttick to prevent stackoverflow due to cascading promises all resolving in sequence
-                promises.internal.delay(sub(context)
-                    promises.internal.notifyListeners(context.event)
-                end sub, {event: event})
-            end sub)
-
+            promises.internal.observeFieldScoped(promise, promises.internal.PromiseField.promiseState, callback, [promises.internal.PromiseField.promiseResult])
             storage = {
                 promise: promise
                 thenListeners: []
@@ -620,6 +776,7 @@ namespace promises.internal
             }
             m[id] = storage
         end if
+
         return storage
     end function
 
@@ -629,20 +786,34 @@ namespace promises.internal
     '
     function on(eventName as string, promise as dynamic, callback as function, context = {} as object) as dynamic
         if promises.isPromise(promise) then
+            registrationLocation = invalid
+            #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                ' create a new error to get the stack trace
+                try
+                    throw "Registering listener for promise"
+                catch error
+                    registrationLocation = error
+                end try
+            #end if
             newPromise = promises.create()
             storage = promises.internal.getPromiseStorage(promise)
             storage[eventName + "Listeners"].push({
                 callback: callback
                 context: context
                 promise: newPromise
+                registrationLocation: registrationLocation
             })
 
             promiseState = promise.promiseState
             'trigger a change if the promise is already resolved
             if promiseState = promises.PromiseState.resolved or promiseState = promises.PromiseState.rejected then
-                promises.internal.delay(sub (details as object)
-                    details.promise.promiseState = details.promiseState
-                end sub, {promise: promise, promiseState: promiseState})
+                if m.__promises__promisesPort <> invalid then
+                    promise.promiseState = promiseState
+                else
+                    promises.internal.delay(sub (details as object)
+                        details.promise.promiseState = details.promiseState
+                    end sub, { promise: promise, promiseState: promiseState })
+                end if
             end if
             #if PROMISES_DEBUG
                 print "[promises.watch]", newPromise.id, "is watching", promise.id, eventName
@@ -663,37 +834,46 @@ namespace promises.internal
     '
     sub notifyListeners(event as object)
         originalPromise = event.getRoSgNode()
-        if promises.isComplete(originalPromise) then
-            #if PROMISES_DEBUG
-                print "[promises.done]", originalPromise.id, "has completed"
-            #end if
 
+        ' short circuit if the promise is not complete, since we only want to notify listeners once
+        if not promises.isComplete(originalPromise) then
+            return
+        end if
+
+        #if PROMISES_DEBUG
+            print "[promises.done]", originalPromise.id, "has completed"
+        #end if
+
+        ' We want to make sure that if a new listener is added while we are processing the current listeners, that it also gets notified of the current state change.
+        ' Doing the while loop here supports handing new observers that are added in the callbacks.
+        while promises.internal.hasStorage(originalPromise)
             ' unregister any observers once the promise is completed
             promises.internal.unobserveFieldScoped(originalPromise, promises.internal.PromiseField.promiseState)
-            promiseStorage = promises.internal.getPromiseStorage(originalPromise)
+            promiseStorage = promises.internal.getPromiseStorage(originalPromise, event)
             ' Delete the storage for this promise since we are going to handled all of the current listeners.
             ' Any new listeners created as a result of the logic in the callbacks will
             ' register a new instance of the promise storage item. If a new storage item is created
             ' we will notify the new listeners when we are done with the current ones.
-            promises.internal.clearPromiseStorage(originalPromise)
+            promises.internal.clearPromiseStorage(originalPromise, event)
 
-            promiseState = originalPromise.promiseState
-            promiseResult = originalPromise.promiseResult
+            promiseState = event.getData()
+            promiseResult = event.getInfo().promiseResult
 
             'handle .then() listeners
             for each listener in promiseStorage.thenListeners
-                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.PromiseState.resolved, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.resolved, true, promiseResult)
             end for
 
             'handle .catch() listeners
             for each listener in promiseStorage.catchListeners
-                promises.internal.processPromiseListener(originalPromise, listener, promiseState = promises.PromiseState.rejected, promiseResult)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, promiseState = promises.PromiseState.rejected, true, promiseResult)
             end for
 
             'handle .finally() listeners
             for each listener in promiseStorage.finallyListeners
-                promises.internal.processPromiseListener(originalPromise, listener, true)
+                promises.internal.processPromiseListener(originalPromise, promiseState, listener, true, false, promiseResult)
             end for
+
             #if PROMISES_DEBUG
                 if m.__promises__debug = invalid then
                     m.__promises__debug = []
@@ -702,14 +882,17 @@ namespace promises.internal
                 m.__promises__debug.push(promiseStorage)
             #end if
 
-            if promises.internal.hasStorage(originalPromise) then
-                ' There were listeners added as a result of some of the callback notifications
-                ' Re-trigger the notification process for the new listeners
+            ' if we're running in a task, we can keep notifying new listeners
+            if m.__promises__promisesPort <> invalid then
+                continue while
+            else
+                'we're not in a task, nexttick to avoid execution timeouts
                 promises.internal.delay(sub (event as object)
                     promises.internal.notifyListeners(event)
                 end sub, event)
+                exit while
             end if
-        end if
+        end while
     end sub
 
     ' Used to check if there is a storage item of listeners for the supplied promise
@@ -730,7 +913,7 @@ namespace promises.internal
     end function
 
     ' Handle an individual promise listener
-    sub processPromiseListener(originalPromise as object, storageItem as object, callCallback as boolean, promiseValue = "__INVALID__" as dynamic)
+    sub processPromiseListener(originalPromise as object, originalPromiseState as string, storageItem as object, callCallback as boolean, isThenOrCatch as boolean, promiseValue = invalid as dynamic)
         newPromise = storageItem.promise
         #if PROMISES_DEBUG
             print "[promises.notify]", originalPromise.id, "notifying", newPromise.id
@@ -738,24 +921,27 @@ namespace promises.internal
         callback = storageItem.callback
         context = storageItem.context
         hasContext = promises.internal.isSet(context)
-        isThenOrCatch = promises.internal.isSet(promiseValue)
         'only call the callback if configured to do so
         if callCallback then
             #if PROMISES_DEBUG
                 print "[promises.notify]", originalPromise.id, "calling callback for", newPromise.id
             #end if
+            lineNumber = -1
             try
                 '.then and .catch take one or two parameters (`promiseValue` and optional `context`)
                 if isThenOrCatch then
                     if hasContext then
-                        lineNumber = -1
                         try
                             lineNumber = LINE_NUM + 1
                             callbackResult = callback(promiseValue, context)
                         catch error
                             file = error.backtrace.peek()
                             if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
                                 callbackResult = callback(promiseValue)
                             else
                                 promises.internal.logCrashIfEnabled(error)
@@ -763,20 +949,39 @@ namespace promises.internal
                             end if
                         end try
                     else
-                        callbackResult = callback(promiseValue)
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback(promiseValue)
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
+                                callbackResult = callback(promiseValue, 0) ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
+                            else
+                                promises.internal.logCrashIfEnabled(error)
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     end if
 
                     '.finally callback takes 1 optional parameter (`context`)
                 else
                     if hasContext then
-                        lineNumber = -1
                         try
                             lineNumber = LINE_NUM + 1
                             callbackResult = callback(context)
                         catch error
                             file = error.backtrace.peek()
                             if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
-                                print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
                                 callbackResult = callback()
                             else
                                 promises.internal.logCrashIfEnabled(error)
@@ -784,7 +989,23 @@ namespace promises.internal
                             end if
                         end try
                     else
-                        callbackResult = callback()
+                        try
+                            lineNumber = LINE_NUM + 1
+                            callbackResult = callback()
+                        catch error
+                            file = error.backtrace.peek()
+                            if error.number = 241 and file.filename = promises.internal.getLibPath() and file.line_number = lineNumber then
+                                #if PROMISES_SAVE_LISTENER_REGISTRATION_LOCATION
+                                    print "[promises.error]: " promises.internal.formatStackTrace(storageItem.registrationLocation, promises.internal.wrongNumberOfParametersMessage)
+                                #else
+                                    print "[promises.error]: " promises.internal.formatStackTrace(error, promises.internal.wrongNumberOfParametersMessage)
+                                #end if
+                                callbackResult = callback(0) ' 0 works for numbers, boolean, object, dynamic. (does not work for string or function, but those are uncommon)
+                            else
+                                promises.internal.logCrashIfEnabled(error)
+                                callbackResult = promises.reject(error)
+                            end if
+                        end try
                     end if
                 end if
             catch e
@@ -797,7 +1018,7 @@ namespace promises.internal
             end try
         else
             'use the current promise value to pass to the next promise (this is a .catch handler)
-            if originalPromise.promiseState = promises.PromiseState.rejected then
+            if originalPromiseState = promises.PromiseState.rejected then
                 callbackResult = promises.reject(promiseValue)
             else
                 callbackResult = promiseValue
@@ -839,13 +1060,15 @@ namespace promises.internal
                 context = {
                     newPromise: newPromise
                     originalPromise: originalPromise
+                    originalPromiseState: originalPromiseState
+                    originalPromiseResult: promiseValue
                 }
 
                 promises.onThen(callbackPromise, sub (result as dynamic, context as dynamic)
-                    if context.originalPromise.promiseState = promises.PromiseState.resolved then
-                        promises.resolve(context.originalPromise.promiseResult, context.newPromise)
+                    if context.originalPromiseState = promises.PromiseState.resolved then
+                        promises.resolve(context.originalPromiseResult, context.newPromise)
                     else
-                        promises.reject(context.originalPromise.promiseResult, context.newPromise)
+                        promises.reject(context.originalPromiseResult, context.newPromise)
                     end if
                 end sub, context)
 
@@ -853,24 +1076,24 @@ namespace promises.internal
                     promises.reject(error, context.newPromise)
                 end sub, context)
             else
-                if originalPromise.promiseState = promises.PromiseState.resolved then
-                    promises.resolve(originalPromise.promiseResult, newPromise)
+                if originalPromiseState = promises.PromiseState.resolved then
+                    promises.resolve(promiseValue, newPromise)
                 else
-                    promises.reject(originalPromise.promiseResult, newPromise)
+                    promises.reject(promiseValue, newPromise)
                 end if
             end if
         end if
     end sub
 
-    function defaultThenCallback(value = invalid, _ = invalid) as dynamic
+    function defaultThenCallback(value = invalid as dynamic, _ = invalid as dynamic) as dynamic
         return value
     end function
 
-    function defaultCatchCallback(value = invalid, _ = invalid) as dynamic
+    function defaultCatchCallback(value = invalid as dynamic, _ = invalid as dynamic) as dynamic
         return promises.reject(value)
     end function
 
-    sub defaultFinallyCallback(_ = invalid)
+    sub defaultFinallyCallback(_ = invalid as dynamic)
     end sub
 
     '
@@ -889,7 +1112,7 @@ namespace promises.internal
     ' @param {Float} [duration] - the amount of delay before invoking the callback
     sub delay(callback as function, context as dynamic, duration = 0.0001 as float)
         timer = createObject("roSGNode", "Timer")
-        timer.update({duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid()}, true)
+        timer.update({ duration: duration, repeat: false, id: "__delay_" + promises.internal.createUuid() }, true)
 
         m[timer.id] = {
             timer: timer
@@ -921,7 +1144,7 @@ namespace promises.internal
     ' @param {String} field - The name of the field to be monitored.
     ' @param {Dynamic} callback - The name or message port to be executed when the value of the field changes.
     ' @return true if field could be observed, false if not
-    function observeFieldScoped(node as object, field as string, callback as dynamic, infoFields = [] as object)
+    function observeFieldScoped(node as object, field as string, callback as dynamic, infoFields = [] as object) as boolean
         if not type(node) = "roSGNode" then
             return false
         else
@@ -939,7 +1162,7 @@ namespace promises.internal
     ' @param {roSGNode} node - The node to remove the observer from
     ' @param {String} field - The name of the field to no longer be monitored.
     ' @return true if field could be unobserved, false if not
-    function unobserveFieldScoped(node as object, field as string)
+    function unobserveFieldScoped(node as object, field as string) as boolean
         if not type(node) = "roSGNode" then
             return false
         else
@@ -1074,7 +1297,7 @@ namespace promises.internal
                                 result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28])
                             end if
                         else ' 30-32 args
-                            if (argsCount = 30) then ' 30 args
+                            if argsCount = 30 then ' 30 args
                                 result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29])
                             else if argsCount = 31 then ' 31 args
                                 result = callback(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15], args[16], args[17], args[18], args[19], args[20], args[21], args[22], args[23], args[24], args[25], args[26], args[27], args[28], args[29], args[30])
@@ -1109,7 +1332,7 @@ namespace promises.internal
     '        rooibos_init(testscenename As Dynamic) As Void (pkg:/source/rooibos/Rooibos.brs:27)
     '        main(args As Dynamic) As Dynamic (pkg:/source/Main.brs:2)
     function formatStackTrace(error as dynamic, message as string) as string
-        output = error.message + chr(10)
+        output = message + chr(10)
         indent = string(6, " ")
 
         for i = error.backTrace.count() - 1 to 0 step -1

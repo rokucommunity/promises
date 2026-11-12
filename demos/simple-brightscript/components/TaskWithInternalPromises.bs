@@ -1,0 +1,29 @@
+sub init()
+    m.port = CreateObject("roMessagePort")
+    m.top.functionName = "startTask"
+end sub
+
+sub startTask()
+    promises.setMessagePort(m.port)
+    promise = doNetworkRequest("http://ip-api.com/json/", "GET", {})
+    promises.chain(promise).then(function(response)
+        m.top.response = response
+    end function).catch(function(error)
+        print "Error in TaskWithInternalPromises:", error
+    end function).finally(sub()
+        m.top.control = "STOP"
+    end sub)
+
+    while true
+        message = promises.wait2(0, m.port)
+    end while
+end sub
+
+
+function doNetworkRequest(url as string, method as string, body as object) as object
+    promise = promises.create()
+    promises.resolve({
+        "something": "OF VALUE"
+    }, promise)
+    return promise
+end function
