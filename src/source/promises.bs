@@ -10,6 +10,7 @@
 
 namespace promises
     ' Create a new promise
+    ' @return {roSGNodePromise}
     function create() as dynamic
         'create a unique ID for this promise
         id = "promise-" + promises.internal.createUuid()
@@ -27,20 +28,38 @@ namespace promises
         return node
     end function
 
-    ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise resolution
+    '
+    ' @param {roSGNodePromise} promise
+    ' @param {Function} [callback] - The function to be invoked when the promise resolves. This function takes a dynamic result as the first parameter and if a context was supplied a dynamic context as the second parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
+    ' @return {roSGNodePromise}
     function onThen(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
         if callback = invalid then callback = promises.internal.defaultThenCallback
         return promises.internal.on("then", promise, callback, context)
     end function
 
-    ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise rejection
+    '
+    ' @param {roSGNodePromise} promise
+    ' @param {Function} [callback] - The function to be invoked when the promise rejects. This function takes a dynamic error as the first parameter and if a context was supplied a dynamic context as the second parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
+    ' @return {roSGNodePromise}
     function onCatch(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
         if callback = invalid then callback = promises.internal.defaultCatchCallback
         return promises.internal.on("catch", promise, callback, context)
     end function
 
-    ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise completion regardless of resolved or rejected status.
+    '
+    ' @param {roSGNodePromise} promise
+    ' @param {Function} [callback] - The function to be invoked when the promise resolves or rejects. If a context was supplied this function takes a dynamic context as the first parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
+    ' @return {roSGNodePromise}
     function onFinally(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
         if callback = invalid then callback = promises.internal.defaultFinallyCallback
         return promises.internal.on("finally", promise, callback, context)
     end function
@@ -48,6 +67,7 @@ namespace promises
     ' The Promise.try() method takes a callback of any kind (returns or throws, synchronously or asynchronously) and wraps its result in a Promise.
     ' @param {function} callback - The callback to wrap in a promise
     ' @param {dynamic} args - The arguments to pass to the callback. Max 32 arguments.
+    ' @return {roSGNodePromise}
     function try(callback as function, args = invalid as dynamic) as dynamic
         try
             result = promises.internal.callWithArgs(callback, args)
@@ -60,6 +80,9 @@ namespace promises
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when all of the input's promises fulfill (including when an empty array is passed), with an array of the fulfillment values.
     ' It rejects when any of the input's promises rejects, with this first rejection reason.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function all(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -144,6 +167,9 @@ namespace promises
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when all of the input's promises settle (including when an empty array is passed),
     ' with an array of objects that describe the outcome of each promise.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function allSettled(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -233,6 +259,9 @@ namespace promises
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise fulfills when any of the input's promises fulfills, with this first fulfillment value.
     ' It rejects when all of the input's promises reject (including when an empty array is passed), with an AggregateError containing an array of rejection reasons.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function any(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -312,6 +341,9 @@ namespace promises
 
     ' Takes an array of promises as input and returns a single Promise.
     ' This returned promise settles with the eventual state of the first promise that settles.
+    '
+    ' @param {roSGNodePromise[]} promiseArray
+    ' @return {roSGNodePromise}
     function race(promiseArray as dynamic) as dynamic
         ' Create a deferred to be resolved later
         deferred = promises.create()
@@ -378,6 +410,11 @@ namespace promises
         return deferred
     end function
 
+    ' Takes a value to resolve on a promise. If no promise is supplied the value will be wrapped with a new promise.
+    '
+    ' @param {dynamic} result - The final value from the promise work
+    ' @param {roSGNodePromise} [promise] - A promise to resolve with the supplied result
+    ' @return {roSGNodePromise}
     function resolve(result as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
             promise = promises.create()
@@ -395,6 +432,11 @@ namespace promises
         return promise
     end function
 
+    ' Takes a value to reject on a promise. If no promise is supplied the value will be wrapped with a new promise.
+    '
+    ' @param {dynamic} error - the reason the promise was rejected. Typically an exception object.
+    ' @param {roSGNodePromise} [promise] - the promise to be rejected. If not promise is supplied a new promise will be created with the supplied error
+    ' @return {roSGNodePromise}
     function reject(error as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
             promise = promises.create()
@@ -412,6 +454,10 @@ namespace promises
         return promise
     end function
 
+    ' Checks if a promise if resolved or rejected.
+    '
+    ' @param {roSGNodePromise} promise
+    ' @return {boolean}
     function isComplete(promise as object) as boolean
         if not promises.isPromise(promise) then return false
         state = promise.promiseState
@@ -424,6 +470,9 @@ namespace promises
     ' - the SubType exactly equals "Promise"
     ' - the subtype ends with "_promise" case insensitive
     ' - the node has a field called "promiseState"
+    '
+    ' @param {dynamic} promise
+    ' @return {boolean}
     function isPromise(promise as dynamic) as boolean
         if not type(promise) = "roSGNode" then
             return false
@@ -449,6 +498,9 @@ namespace promises
     end function
 
     ' Determines if the given node event was triggered on a promise like node.
+    '
+    ' @param {dynamic} event
+    ' @return {boolean}
     function isPromiseEvent(event as dynamic) as boolean
         if not type(event) = "roSGNodeEvent" then
             return false
@@ -465,7 +517,18 @@ namespace promises
         end for
     end sub
 
+    interface PromiseChain
+        function then(callback as function) as PromiseChain
+        function catch(callback as function) as PromiseChain
+        function finally(callback as function) as PromiseChain
+        function toPromise() as roSGNodePromise
+    end interface
+
     'Allows chaining multiple promise operations in a row in a clean syntax
+    '
+    ' @param {roSGNodePromise} initialPromise - The first promise to then chain off of
+    ' @param {object} [context] - A value used to store state across callbacks within this chain; passed by value for primitives and by reference for objects (never cloned)
+    ' @return {PromiseChain}
     function chain(initialPromise as object, context = "__INVALID__" as object) as object
         return {
             _lastPromise: initialPromise
@@ -494,10 +557,16 @@ namespace promises
         }
     end function
 
+    ' Set the message port that promise events are delivered to (instead of field observer callbacks)
+    '
+    ' @param {roMessagePort} port
     sub setMessagePort(port as dynamic)
         m.__promises__promisesPort = port
     end sub
 
+    ' Get the message port registered via `promises.setMessagePort()`
+    '
+    ' @return {roMessagePort}
     function getMessagePort() as dynamic
         return m.__promises__promisesPort
     end function
@@ -505,6 +574,9 @@ namespace promises
     ' First, consume and process all promise events from the front of the queue.
     ' This method is similar to the GetMessage() method, but the returned object (if not invalid) remains in the message queue.
     ' A later call to WaitMessage(), GetMessage() or PeekMessage() will return the same message.
+    '
+    ' @param {roMessagePort} port
+    ' @return {dynamic}
     function peekMessage(port as dynamic) as dynamic
         while true
             message = port.peekMessage()
@@ -525,6 +597,9 @@ namespace promises
 
     ' First, consume and process all promise events from the front of the queue.
     ' Then, if an event object is available, it is returned. Otherwise `invalid` is returned. The method returns immediately in either case and does not wait.
+    '
+    ' @param {roMessagePort} port
+    ' @return {dynamic}
     function getMessage(port as dynamic) as dynamic
         if promises.peekMessage(port) <> invalid then
             return port.getMessage()
@@ -535,6 +610,10 @@ namespace promises
 
 
     ' Same capabilities as the native `wait()` function, except that promise events are automatically processed and removed from its registered `roMessagePort` provided in `promises.setMessagePort()`.
+    '
+    ' @param {integer} timeoutMilliseconds
+    ' @param {roMessagePort} port
+    ' @return {dynamic}
     function wait2(timeoutMilliseconds as dynamic, port as dynamic) as dynamic
         promisesPort = promises.getMessagePort()
         'bs:disable-next-line
@@ -601,6 +680,9 @@ namespace promises
     end function
 
     ' Makes sure the value supplied is a promise
+    '
+    ' @param {object} value
+    ' @return {roSGNodePromise}
     function ensurePromise(value as object) as object
         if promises.isPromise(value) then return value
         return promises.resolve(value)
