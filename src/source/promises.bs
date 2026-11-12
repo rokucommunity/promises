@@ -28,35 +28,38 @@ namespace promises
         return node
     end function
 
-    ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise resolution
     '
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultThenCallback]
-    ' @param {object} [context="__INVALID__"]
+    ' @param {Function} [callback] - The function to be invoked when the promise resolves. This function takes a dynamic result as the first parameter and if a context was supplied a dynamic context as the second parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
     function onThen(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `then` once BrighterScript supports using keywords as namespaced function names
         if callback = invalid then callback = promises.internal.defaultThenCallback
         return promises.internal.on("then", promise, callback, context)
     end function
 
-    ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise rejection
     '
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultCatchCallback]
-    ' @param {object} [context="__INVALID__"]
+    ' @param {Function} [callback] - The function to be invoked when the promise rejects. This function takes a dynamic error as the first parameter and if a context was supplied a dynamic context as the second parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
     function onCatch(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `catch` once BrighterScript supports using keywords as namespaced function names
         if callback = invalid then callback = promises.internal.defaultCatchCallback
         return promises.internal.on("catch", promise, callback, context)
     end function
 
-    ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
+    ' Used to register a callback on promise completion regardless of resolved or rejected status.
     '
     ' @param {roSGNodePromise} promise
-    ' @param {Function} [callback=promises.internal.defaultFinallyCallback]
-    ' @param {object} [context="__INVALID__"]
+    ' @param {Function} [callback] - The function to be invoked when the promise resolves or rejects. If a context was supplied this function takes a dynamic context as the first parameter.
+    ' @param {object} [context] - state information that will be provided to the callback; passed by value for primitives and by reference for objects (never cloned).
     ' @return {roSGNodePromise}
     function onFinally(promise as dynamic, callback = invalid as dynamic, context = "__INVALID__" as object) as dynamic
+        ' TODO rename this to `finally` once BrighterScript supports using keywords as namespaced function names
         if callback = invalid then callback = promises.internal.defaultFinallyCallback
         return promises.internal.on("finally", promise, callback, context)
     end function
@@ -407,9 +410,10 @@ namespace promises
         return deferred
     end function
 
+    ' Takes a value to resolve on a promise. If no promise is supplied the value will be wrapped with a new promise.
     '
-    ' @param {dynamic} result
-    ' @param {roSGNodePromise} [promise=invalid]
+    ' @param {dynamic} result - The final value from the promise work
+    ' @param {roSGNodePromise} [promise] - A promise to resolve with the supplied result
     ' @return {roSGNodePromise}
     function resolve(result as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
@@ -428,9 +432,10 @@ namespace promises
         return promise
     end function
 
+    ' Takes a value to reject on a promise. If no promise is supplied the value will be wrapped with a new promise.
     '
-    ' @param {dynamic} error
-    ' @param {roSGNodePromise} [promise=invalid]
+    ' @param {dynamic} error - the reason the promise was rejected. Typically an exception object.
+    ' @param {roSGNodePromise} [promise] - the promise to be rejected. If not promise is supplied a new promise will be created with the supplied error
     ' @return {roSGNodePromise}
     function reject(error as dynamic, promise = invalid as dynamic) as object
         if not promises.isPromise(promise) then
@@ -449,6 +454,8 @@ namespace promises
         return promise
     end function
 
+    ' Checks if a promise if resolved or rejected.
+    '
     ' @param {roSGNodePromise} promise
     ' @return {boolean}
     function isComplete(promise as object) as boolean
@@ -519,8 +526,8 @@ namespace promises
 
     'Allows chaining multiple promise operations in a row in a clean syntax
     '
-    ' @param {roSGNodePromise} initialPromise
-    ' @param {object} [context="__INVALID__"]
+    ' @param {roSGNodePromise} initialPromise - The first promise to then chain off of
+    ' @param {object} [context] - A value used to store state across callbacks within this chain; passed by value for primitives and by reference for objects (never cloned)
     ' @return {PromiseChain}
     function chain(initialPromise as object, context = "__INVALID__" as object) as object
         return {
